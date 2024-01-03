@@ -1,4 +1,4 @@
-package com.example.busapp
+package com.tayadehritik.busapp
 
 import org.junit.Test
 
