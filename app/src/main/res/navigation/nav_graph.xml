@@ -3,30 +3,49 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/authenticationHostFragment">
-
+    app:startDestination="@id/mainFragment">
 
     <fragment
-        android:id="@+id/authenticationHostFragment"
-        android:name="com.tayadehritik.busapp.authentication.Login"
-        android:label="fragment_authentication_host"
-        tools:layout="@layout/fragment_authentication_login" >
+        android:id="@+id/mainFragment"
+        android:name="com.tayadehritik.busapp.MainFragment"
+        android:label="fragment_main"
+        tools:layout="@layout/fragment_main" >
         <action
-            android:id="@+id/action_authenticationHostFragment_to_verify"
-            app:destination="@id/verify" />
-    </fragment>
-    <fragment
-        android:id="@+id/verify"
-        android:name="com.tayadehritik.busapp.authentication.Verify"
-        android:label="fragment_authentication_verify"
-        tools:layout="@layout/fragment_authentication_verify" >
+            android:id="@+id/action_mainFragment_to_auth_nested_graph"
+            app:destination="@id/auth_nested_graph" />
         <action
-            android:id="@+id/action_verify_to_home"
+            android:id="@+id/action_mainFragment_to_home"
             app:destination="@id/home" />
     </fragment>
+
+    <navigation android:id="@+id/auth_nested_graph"
+        app:startDestination="@id/authenticationHostFragment">
+        <fragment
+            android:id="@+id/authenticationHostFragment"
+            android:name="com.tayadehritik.busapp.authentication.Login"
+            android:label="fragment_authentication_host"
+            tools:layout="@layout/fragment_authentication_login">
+            <action
+                android:id="@+id/action_authenticationHostFragment_to_verify"
+                app:destination="@id/verify" />
+        </fragment>
+        <fragment
+            android:id="@+id/verify"
+            android:name="com.tayadehritik.busapp.authentication.Verify"
+            android:label="fragment_authentication_verify"
+            tools:layout="@layout/fragment_authentication_verify"/>
+        <action
+            android:id="@+id/action_global_mainFragment"
+            app:destination="@id/mainFragment" />
+        <argument
+            android:name="verificationInProgress"
+            app:argType="boolean" />
+    </navigation>
     <activity
         android:id="@+id/home"
         android:name="com.tayadehritik.busapp.home.Home"
         android:label="activity_home"
         tools:layout="@layout/activity_home" />
+
+
 </navigation>

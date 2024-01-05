@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.tayadehritik.busapp.MainActivity
 import com.tayadehritik.busapp.R
 import java.util.regex.Pattern
 
@@ -45,7 +46,7 @@ class Verify : Fragment() {
         val verifyButton: Button = retview.findViewById<Button>(R.id.VerifyButton)
 
         verifyButton.setOnClickListener {
-            val authAct = (activity as Authentication)
+            val authAct = (activity as MainActivity)
             val verificationCode = verificationCodeTextField.text.toString().trim()
             verifcationCodeTextLayout.error = null
 

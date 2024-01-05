@@ -8,8 +8,10 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.tayadehritik.busapp.MainActivity
 import com.tayadehritik.busapp.R
 import java.util.regex.Pattern
 
@@ -27,6 +29,8 @@ class Login : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,13 +52,19 @@ class Login : Fragment() {
         val phoneTextLayout:TextInputLayout = retview.findViewById<TextInputLayout>(R.id.PhoneTextInputLayout)
         val phoneTextField: TextInputEditText = retview.findViewById<TextInputEditText>(R.id.PhoneTextInputEditText)
         val loginButton: Button = retview.findViewById<Button>(R.id.LoginButton)
+        println("here")
+
+        if(requireArguments().getBoolean("verificationInProgress"))
+        {
+            findNavController().navigate(R.id.verify)
+        }
 
         loginButton.setOnClickListener {
             val phoneNumber = phoneTextField.text.toString().trim()
             phoneTextLayout.error = null
             if (isValidPhoneNumber(phoneNumber)) {
                 // Phone number is valid, proceed with verification
-                (activity as Authentication).startPhoneNumberVerification(phoneNumber)
+                (activity as MainActivity).startPhoneNumberVerification(phoneNumber)
             } else {
                 // Display an error message or handle invalid phone number
                 phoneTextLayout.error = "Invalid phone number"

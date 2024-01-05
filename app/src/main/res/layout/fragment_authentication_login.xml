@@ -26,7 +26,7 @@ tools:context=".authentication.Login">
             android:text="Welcome to\nPune Bus App" />
 
         <com.google.android.material.textfield.TextInputLayout
-            style="?attr/textInputFilledStyle"
+
             android:id="@+id/PhoneTextInputLayout"
             app:startIconDrawable="@drawable/call"
             app:startIconContentDescription="Phone Number"

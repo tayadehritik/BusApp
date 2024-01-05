@@ -1,23 +1,33 @@
 package com.tayadehritik.busapp
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
-import com.tayadehritik.busapp.R
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PolylineOptions
-import com.google.android.gms.maps.model.RoundCap
-import com.google.maps.android.PolyUtil
+import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.fragment.NavHostFragment
+import com.google.firebase.FirebaseException
+import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import java.util.concurrent.TimeUnit
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+class MainActivity : AppCompatActivity() {
 
     private val COLOR_BLACK_ARGB = -0x1000000
     private val POLYLINE_STROKE_WIDTH_PX = 12
+
+    private lateinit var auth: FirebaseAuth
+    public var storedVerificationId: String? = ""
+    private var verificationInProgress: Boolean = false
+    private lateinit var resendToken: PhoneAuthProvider.ForceResendingToken
+    private lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,26 +35,179 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Get the SupportMapFragment and request notification when the map is ready to be used.
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
-        mapFragment?.getMapAsync(this)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_main) as NavHostFragment
+        val navController = navHostFragment.navController
+        // [START initialize_auth]
+        // Initialize Firebase Auth
+        auth = Firebase.auth
+        // [END initialize_auth]
+
+        // Initialize phone auth callbacks
+        // [START phone_auth_callbacks]
+        callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+
+            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                // This callback will be invoked in two situations:
+                // 1 - Instant verification. In some cases the phone number can be instantly
+                //     verified without needing to send or enter a verification code.
+                // 2 - Auto-retrieval. On some devices Google Play services can automatically
+                //     detect the incoming verification SMS and perform verification without
+                //     user action.
+                Log.d(MainActivity.TAG, "onVerificationCompleted:$credential")
+                verificationInProgress = false
+                signInWithPhoneAuthCredential(credential)
+            }
+
+            override fun onVerificationFailed(e: FirebaseException) {
+                // This callback is invoked in an invalid request for verification is made,
+                // for instance if the the phone number format is not valid.
+                Log.w(MainActivity.TAG, "onVerificationFailed", e)
+                verificationInProgress = false
+
+                if (e is FirebaseAuthInvalidCredentialsException) {
+                    // Invalid request
+                } else if (e is FirebaseTooManyRequestsException) {
+                    // The SMS quota for the project has been exceeded
+                } else if (e is FirebaseAuthMissingActivityForRecaptchaException) {
+                    // reCAPTCHA verification attempted with null Activity
+                }
+
+                // Show a message and update the UI
+            }
+
+            override fun onCodeSent(
+                verificationId: String,
+                token: PhoneAuthProvider.ForceResendingToken,
+            ) {
+                // The SMS verification code has been sent to the provided phone number, we
+                // now need to ask the user to enter the code and then construct a credential
+                // by combining the code with a verification ID.
+                Log.d(MainActivity.TAG, "onCodeSent:$verificationId")
+                navController.navigate(R.id.verify)
+                // Save verification ID and resending token so we can use them later
+                storedVerificationId = verificationId
+                resendToken = token
+            }
+        }
+        // [END phone_auth_callbacks]
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Check if user is signed in (non-null) and update UI accordingly.
+        val currentUser = auth.currentUser
+        updateUI(currentUser)
+    }
+
+
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("storedVerificationId", storedVerificationId)
+        outState.putBoolean("verificationInProgress",verificationInProgress)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        storedVerificationId = savedInstanceState.getString("storedVerificationId")
+        verificationInProgress = savedInstanceState.getBoolean("verificationInProgress")
 
     }
-    override fun onMapReady(googleMap: GoogleMap) {
+    public fun startPhoneNumberVerification(phoneNumber: String) {
+        // [START start_phone_auth]
+        val options = PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber("+91"+phoneNumber) // Phone number to verify
+            .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
+            .setActivity(this) // Activity (for callback binding)
+            .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
+            .build()
+        PhoneAuthProvider.verifyPhoneNumber(options)
+        verificationInProgress = true
 
-        val polyline1 = googleMap.addPolyline(
-            PolylineOptions()
-                .startCap(RoundCap())
-                .endCap(RoundCap())
-                .color(COLOR_BLACK_ARGB)
-                .width(POLYLINE_STROKE_WIDTH_PX.toFloat())
-            .clickable(true)
-            .addAll(PolyUtil.decode("ao{pB}rhaM\\`@nAmARQJL@BFHBBJJSPs@j@eCzB_CtBUTKHa@`@}BnBqApAgAfAEBq@n@o@l@a@\\{BtB[VML?B@D?B?D?B?BAD?BADAFCFCFEDGDGBG@E@A?S@I?IAAAkBfB[\\YXa@Zm@h@kCvBeDrC_@TG@_FpEmGzFwOrNYVWTuAjAi@f@OLm@h@sAnAYZW\\A@MXMXOp@Ot@Ot@Kf@Ib@?BMl@Ox@I^AFOr@Ot@M`AGd@G`@APGf@AHGl@W~BEZKp@WtB]vCq@nFMdAYfCo@bFOpACNOtAo@nFaAfIaAlIUhBOrACLWvBUdCUnDc@jHQfCSdDANI|AGnACbA?b@B^?Z@JFbADdAJvA@HBn@\\bEDl@D^LbAHl@Lt@Fh@H~@HNBP@l@@P?\\Cp@Cb@E`@Kn@GVGXCH?@Qp@Sl@Of@ABIRWh@OXEHU\\IN]`@EF[ZUTA@SPA@k@`@KHi@^]P_@Ti@\\IFE@QLs@b@q@`@CB}@j@MHGDA@MHq@b@q@b@UN[Ri@\\QJA@WLA?WNOB_@`@c@b@uA~AMRKPOb@O`@CHa@~A}BbJy@tCm@bCk@dCGX{@rDQp@_@~AGT[jAm@~BOf@CHKRS\\g@j@g@l@STKJ}AxBeArAmBdCSVKPA@oDrEEDeDfEcAtAg@p@u@`As@~@}H|Ju@dAW\\uCtD{BtC?@oDrEa@f@SXINOTm@vAmBvEIVGXKj@El@Cl@EtAANIpDGtBAv@Ad@C`AGtAAHCl@Ep@GbAI~@Ev@APARADI`AE^Gd@EZIt@If@E\\QnAKn@Mx@Oz@M~@g@rDG\\m@rDg@rCy@xEMx@WdBEV[zBOxAMj@K`@GZc@|BENKZc@tBUnAKb@GLGPS^UZGFUVWXGHc@`@?@A^AP@B?B?@@@@@@@BBvAOVCNCh@EFAJ?LAH?J@H?PBd@JLBf@F~@Pn@N\\HNFPD\\HNHRHJDJDh@NRDTDPDr@Hb@FlAPtBPL@L@dALt@JTD^DV@P?NAHCJEp@YHEDCNGb@O\\Id@El@E@?b@ET?N?XBJBPDZFdAT@@j@J`@H~Bb@r@LB?\\JRBd@FN?FAJAHCHCHEJGRK\\Q`@Q^OREVCTAv@?\\?\\@B?p@@bAA|@EfAEF?rAGhAAx@?~@?z@?bBHlBPF?P@R@J@V?b@Bl@AXCh@A`@?H?\\BT?R@F?V@^Dl@DXCXMj@_@NOVU@?RMJENE\\CN?bADH@rA@dA??E")
-            ))
-        // Position the map's camera near Alice Springs in the center of Australia,
-        // and set the zoom factor so most of Australia shows on the screen.
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(18.6598469, 73.77727039999999), 20f))
-
+        // [END start_phone_auth]
     }
+
+    public fun verifyPhoneNumberWithCode(verificationId: String?, code: String) {
+        // [START verify_with_code]
+        val credential = PhoneAuthProvider.getCredential(verificationId!!, code)
+        verificationInProgress = false
+        signInWithPhoneAuthCredential(credential)
+        // [END verify_with_code]
+    }
+
+    // [START resend_verification]
+    private fun resendVerificationCode(
+        phoneNumber: String,
+        token: PhoneAuthProvider.ForceResendingToken?,
+    ) {
+        val optionsBuilder = PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber(phoneNumber) // Phone number to verify
+            .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
+            .setActivity(this) // (optional) Activity for callback binding
+            // If no activity is passed, reCAPTCHA verification can not be used.
+            .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
+        if (token != null) {
+            optionsBuilder.setForceResendingToken(token) // callback's ForceResendingToken
+        }
+        PhoneAuthProvider.verifyPhoneNumber(optionsBuilder.build())
+    }
+    // [END resend_verification]
+
+    // [START sign_in_with_phone]
+    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    // Sign in success, update UI with the signed-in user's information
+                    Log.d(TAG, "signInWithCredential:success")
+                    val user = task.result?.user
+                    updateUI(user)
+
+                } else {
+                    // Sign in failed, display a message and update the UI
+                    Log.w(TAG, "signInWithCredential:failure", task.exception)
+                    if (task.exception is FirebaseAuthInvalidCredentialsException) {
+                        // The verification code entered was invalid
+                    }
+                    // Update UI
+                }
+            }
+    }
+    // [END sign_in_with_phone]
+
+    private fun updateUI(user: FirebaseUser? = auth.currentUser) {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_main) as NavHostFragment
+        val navController = navHostFragment.navController
+        println(user)
+        if(user == null)
+        {
+            val bundle = Bundle()
+            bundle.putBoolean("verificationInProgress", verificationInProgress)
+            //go to authentication navgraph
+            if(verificationInProgress)
+            {
+
+                navController.navigate(R.id.auth_nested_graph,bundle)
+
+            }
+            else
+            {
+
+                navController.navigate(R.id.auth_nested_graph,bundle)
+            }
+
+        }
+        else
+        {
+            //go to home navgraph
+            navController.navigate(R.id.home)
+        }
+    }
+
+
+    companion object {
+        private const val TAG = "PhoneAuthActivity"
+    }
+
 
 }
