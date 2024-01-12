@@ -30,7 +30,7 @@
           app:queryBackground="@android:color/transparent"
 
            app:elevation="8dp"
-           android:hint="hint" />
+           android:hint="Search by bus no. or destination" />
 
    </androidx.cardview.widget.CardView>
 
@@ -47,7 +47,7 @@
     <com.google.android.material.search.SearchView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:hint="hint"
+        android:hint="Search by bus no. or destination"
         app:layout_anchor="@id/search_bar">
         <!--Search suggestions/results go here (ScrollView, RecyclerView, etc.)-->
     </com.google.android.material.search.SearchView>

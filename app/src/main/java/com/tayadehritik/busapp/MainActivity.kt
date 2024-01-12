@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
@@ -16,6 +17,9 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.tayadehritik.busapp.network.User
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +32,9 @@ class MainActivity : AppCompatActivity() {
     private var verificationInProgress: Boolean = false
     private lateinit var resendToken: PhoneAuthProvider.ForceResendingToken
     private lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
+
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,6 +104,7 @@ class MainActivity : AppCompatActivity() {
         // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         updateUI(currentUser)
+        updateDB(currentUser)
     }
 
 
@@ -202,6 +210,18 @@ class MainActivity : AppCompatActivity() {
             //go to home navgraph
             navController.navigate(R.id.home)
         }
+    }
+
+    private fun updateDB(user: FirebaseUser? = auth.currentUser) {
+        val localuser:User = User()
+        //try to add user
+        if(user != null)
+        {
+            lifecycleScope.launch {
+                localuser.addUser(user.uid)
+            }
+        }
+
     }
 
 

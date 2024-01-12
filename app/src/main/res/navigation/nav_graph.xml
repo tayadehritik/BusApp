@@ -37,9 +37,7 @@
         <action
             android:id="@+id/action_global_mainFragment"
             app:destination="@id/mainFragment" />
-        <argument
-            android:name="verificationInProgress"
-            app:argType="boolean" />
+
     </navigation>
     <activity
         android:id="@+id/home"
