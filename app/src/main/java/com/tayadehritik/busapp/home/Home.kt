@@ -1,8 +1,13 @@
 package com.tayadehritik.busapp.home
 
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.widget.ListView
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -10,19 +15,53 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
+import com.google.android.material.search.SearchView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.google.maps.android.PolyUtil
 import com.tayadehritik.busapp.R
+import com.tayadehritik.busapp.adapters.ListAdapter
+import com.tayadehritik.busapp.models.Route
+import com.tayadehritik.busapp.network.RouteNetwork
+import kotlinx.coroutines.launch
 
 class Home : AppCompatActivity(), OnMapReadyCallback {
 
     private val COLOR_BLACK_ARGB = -0x1000000
     private val POLYLINE_STROKE_WIDTH_PX = 12
 
+    val arrayList = ArrayList<Route>()
+    private lateinit var auth: FirebaseAuth
+
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+
+        val homSearchView:SearchView = findViewById(R.id.homeSearchView)
+        auth = Firebase.auth
+
+
+        val routeNetwork:RouteNetwork = RouteNetwork(auth.currentUser!!.uid)
+
+        lifecycleScope.launch {
+            val animalNameList = routeNetwork.allRoutes()
+            for(i in animalNameList)
+            {
+                val route:Route = Route(i.bus,i.route)
+                arrayList.add(route)
+
+            }
+            val listView:ListView = findViewById(R.id.listview)
+            val adapter = ListAdapter(arrayList)
+            listView.adapter = adapter
+        }
+
+
+
 
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
         mapFragment?.getMapAsync(this)

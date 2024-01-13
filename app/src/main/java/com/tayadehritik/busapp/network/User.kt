@@ -17,7 +17,10 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-class User {
+class User(userId: String) {
+
+   private val userId = userId
+
     private val client = HttpClient() {
         install(ContentNegotiation) {
             json(Json {
@@ -27,7 +30,7 @@ class User {
         }
     }
 
-    public suspend fun addUser(userId:String)
+    public suspend fun addUser()
     {
         val response:HttpResponse = client.post("https://www.punebusapp.live/user") {
             contentType(ContentType.Application.Json)

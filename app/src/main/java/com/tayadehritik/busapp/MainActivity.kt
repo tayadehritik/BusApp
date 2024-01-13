@@ -213,12 +213,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDB(user: FirebaseUser? = auth.currentUser) {
-        val localuser:User = User()
+
         //try to add user
         if(user != null)
         {
+            val localuser:User = User(user.uid)
             lifecycleScope.launch {
-                localuser.addUser(user.uid)
+                localuser.addUser()
             }
         }
 
