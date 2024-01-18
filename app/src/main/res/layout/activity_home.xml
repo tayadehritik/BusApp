@@ -40,7 +40,21 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.example.busapp.com.tayadehritik.busapp.MainActivity" />
+        tools:context="com.tayadehritik.busapp.home.Home" />
+
+
+
+
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/extended_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_gravity="bottom|end"
+        android:contentDescription="Share my location"
+        android:text="Share My location"
+        app:icon="@drawable/call"/>
 
 
 

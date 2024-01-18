@@ -1,16 +1,28 @@
 package com.tayadehritik.busapp.home
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.webkit.PermissionRequest
 import android.widget.ListView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PolylineOptions
@@ -22,28 +34,70 @@ import com.google.firebase.ktx.Firebase
 import com.google.maps.android.PolyUtil
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.adapters.ListAdapter
+import com.tayadehritik.busapp.databinding.ActivityHomeBinding
 import com.tayadehritik.busapp.models.Route
 import com.tayadehritik.busapp.network.RouteNetwork
+import com.tayadehritik.busapp.network.UserNetwork
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
 class Home : AppCompatActivity(), OnMapReadyCallback {
+
+    private var map: GoogleMap? = null
+    private var lastKnownLocation: Location? = null
 
     private val COLOR_BLACK_ARGB = -0x1000000
     private val POLYLINE_STROKE_WIDTH_PX = 12
 
     val arrayList = ArrayList<Route>()
     private lateinit var auth: FirebaseAuth
+    private lateinit var binding: ActivityHomeBinding
+
+    var locationSharingJob: Job? = null
+    var locationFetchingJob: Job? = null
+
+    private val defaultLocation = LatLng(-33.8523341, 151.2106085)
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    var userNetwork:UserNetwork? = null
+    private var locationPermissionGranted = false
+
+    lateinit var requestPermissionLauncher:ActivityResultLauncher<String>
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home)
 
-        val homSearchView:SearchView = findViewById(R.id.homeSearchView)
+        requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission())
+        { isGranted ->
+            if(isGranted)
+            {
+                //startSharingLocation
+                println("start sharing location")
+            }
+            else
+            {
+                //tell user why you need it
+            }
+
+        }
+
+
+
+        binding = ActivityHomeBinding.inflate(layoutInflater)
+
+
+        val homSearchView:SearchView = binding.homeSearchView
+
         auth = Firebase.auth
-
+        userNetwork = UserNetwork(auth.currentUser!!.uid)
 
         val routeNetwork:RouteNetwork = RouteNetwork(auth.currentUser!!.uid)
 
@@ -55,19 +109,65 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
                 arrayList.add(route)
 
             }
-            val listView:ListView = findViewById(R.id.listview)
+            val listView:ListView = binding.listview
             val adapter = ListAdapter(arrayList)
             listView.adapter = adapter
         }
 
 
+        binding.extendedFab.setOnClickListener {
+
+            //get location permission
+            //check if you already have location permission
+
+            when {
+                ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
+                    //already have the permission
+                    println("already have location permission")
+                }
+                else -> {
+                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            }
 
 
+        }
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
 
+
+
+
+        val view = binding.root
+        setContentView(view)
+
+
+
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun updateLocationUI() {
+        if (map == null) {
+            return
+        }
+        try {
+            if (locationPermissionGranted) {
+                map?.isMyLocationEnabled = true
+                map?.uiSettings?.isMyLocationButtonEnabled = true
+            } else {
+                map?.isMyLocationEnabled = false
+                map?.uiSettings?.isMyLocationButtonEnabled = false
+                lastKnownLocation = null
+                getLocationPermission()
+            }
+        } catch (e: SecurityException) {
+            Log.e("Exception: %s", e.message, e)
+        }
     }
     override fun onMapReady(googleMap: GoogleMap) {
+        this.map = googleMap
 
         val polyline1 = googleMap.addPolyline(
             PolylineOptions()
@@ -82,6 +182,102 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         // Position the map's camera near Alice Springs in the center of Australia,
         // and set the zoom factor so most of Australia shows on the screen.
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(18.6598469, 73.77727039999999), 20f))
+        //updateLocationUI()
 
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getDeviceLocation() {
+        /*
+         * Get the best and most recent location of the device, which may be null in rare
+         * cases when a location is not available.
+         */
+        try {
+            if (locationPermissionGranted) {
+                val locationResult = fusedLocationProviderClient.lastLocation
+                locationResult.addOnCompleteListener(this) { task ->
+                    if (task.isSuccessful) {
+                        // Set the map's camera position to the current location of the device.
+                        lastKnownLocation = task.result
+                        if (lastKnownLocation != null) {
+                            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                LatLng(lastKnownLocation!!.latitude,
+                                    lastKnownLocation!!.longitude), 15.toFloat()))
+                        }
+                    } else {
+                        Log.d("location", "Current location is null. Using defaults.")
+                        Log.e("location", "Exception: %s", task.exception)
+                        map?.moveCamera(CameraUpdateFactory
+                            .newLatLngZoom(defaultLocation, 15.toFloat()))
+                        map?.uiSettings?.isMyLocationButtonEnabled = false
+                    }
+                }
+            }
+        } catch (e: SecurityException) {
+            Log.e("Exception: %s", e.message, e)
+        }
+    }
+
+    private fun getLocationPermission() {
+        /*
+         * Request location permission, so that we can get the location of the
+         * device. The result of the permission request is handled by a callback,
+         * onRequestPermissionsResult.
+         */
+        if (ContextCompat.checkSelfPermission(this.applicationContext,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            locationPermissionGranted = true
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int,
+                                            permissions: Array<String>,
+                                            grantResults: IntArray) {
+        locationPermissionGranted = false
+        when (requestCode) {
+            PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION -> {
+
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.isNotEmpty() &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED
+                ) {
+                    locationPermissionGranted = true
+                }
+            }
+
+            else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        }
+        updateLocationUI()
+    }
+
+    fun updateLocationOfBusOnMap(bus:String) {
+
+        locationFetchingJob = lifecycleScope.launch {
+            while(true) {
+
+            }
+
+            delay(1000)
+        }
+
+    }
+
+    suspend fun  startSharingLocation(bus:String) {
+        //share location to server every 1s
+
+            while(true){
+                println(lastKnownLocation)
+            }
+            delay(1000)
+
+
+    }
+
+    companion object{
+        private const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     }
 }

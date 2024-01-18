@@ -17,8 +17,7 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.tayadehritik.busapp.network.User
-import kotlinx.coroutines.MainScope
+import com.tayadehritik.busapp.network.UserNetwork
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -217,7 +216,7 @@ class MainActivity : AppCompatActivity() {
         //try to add user
         if(user != null)
         {
-            val localuser:User = User(user.uid)
+            val localuser:UserNetwork = UserNetwork(user.uid)
             lifecycleScope.launch {
                 localuser.addUser()
             }

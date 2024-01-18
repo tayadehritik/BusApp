@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+
+
 
     <application
         android:allowBackup="true"
@@ -18,7 +22,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BusApp"
         tools:targetApi="31">
-        <activity
+
+        <service
+            android:name="com.tayadehritik.busapp.service.MyNavigationService"
+            android:foregroundServiceType="location">
+        <!-- Any inner elements would go here. -->
+        </service>
+
+
+    <activity
             android:name=".home.Home"
             android:exported="false" />
 
