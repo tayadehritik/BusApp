@@ -2,6 +2,7 @@ package com.tayadehritik.busapp.home
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Location
@@ -11,6 +12,7 @@ import android.widget.ListView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.registerForActivityResult
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -43,6 +45,7 @@ import com.tayadehritik.busapp.databinding.ActivityHomeBinding
 import com.tayadehritik.busapp.models.Route
 import com.tayadehritik.busapp.network.RouteNetwork
 import com.tayadehritik.busapp.network.UserNetwork
+import com.tayadehritik.busapp.service.MyNavigationService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -70,14 +73,16 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     private var locationPermissionGranted = false
 
     lateinit var requestPermissionLauncher:ActivityResultLauncher<String>
+    lateinit var requestPermissionMultipleLauncher:ActivityResultLauncher<Array<String>>
 
-    @RequiresApi(Build.VERSION_CODES.O)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
 
         super.onCreate(savedInstanceState)
 
-        requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission())
+
+        /*requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission())
         { isGranted ->
             if(isGranted)
             {
@@ -89,6 +94,18 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
             {
                 //tell user why you need it
                 println("user denied fine location permission, you need to provide that permission for app to work properly")
+            }
+
+        }*/
+
+        requestPermissionMultipleLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            if(it.values.reduce { acc, b -> acc && b  })
+            {
+                startSharingLocation("100")
+            }
+            else
+            {
+                println("user denied some location")
             }
 
         }
@@ -124,13 +141,17 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
             //get location permission
             //check if you already have location permission
             when {
-                ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED -> {
+
+                (ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(this,Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) -> {
                     //already have the permission
-                    println("already have location permission")
+                    println("already have both notification and location permission")
                     startSharingLocation("100")
                 }
                 else -> {
-                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    //requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+
+                    requestPermissionMultipleLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS,Manifest.permission.ACCESS_FINE_LOCATION))
                 }
             }
 
@@ -200,6 +221,8 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         task.addOnSuccessListener {
             //do location requests here
             println("do location requests here")
+            val intent = Intent(this,MyNavigationService::class.java)
+            this.startForegroundService(intent)
         }
 
         task.addOnFailureListener {exception ->

@@ -8,10 +8,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
 
 
 
     <application
+        android:name=".BusApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
@@ -25,6 +28,7 @@
 
         <service
             android:name="com.tayadehritik.busapp.service.MyNavigationService"
+            android:exported="false"
             android:foregroundServiceType="location">
         <!-- Any inner elements would go here. -->
         </service>

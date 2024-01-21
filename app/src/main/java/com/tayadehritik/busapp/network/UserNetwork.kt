@@ -45,7 +45,7 @@ class UserNetwork(userId: String) {
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+
     public suspend fun getUsersTravellingOn(bus:String): List<User>
     {
         val allUsers:Users = client.get("https://www.punebusapp.live/user/$bus") {
@@ -57,7 +57,7 @@ class UserNetwork(userId: String) {
         return allUsers.users
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+
     public suspend fun updateUser(user:User)
     {
         val response = client.post("https://www.punebusapp.live/user/update/$userId") {

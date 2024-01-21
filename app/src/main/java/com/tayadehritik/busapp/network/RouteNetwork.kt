@@ -30,7 +30,7 @@ class RouteNetwork(userId:String) {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+
     suspend fun allRoutes(): List<Route> {
         val allroutes:Routes = client.get("https://www.punebusapp.live/route"){
             contentType(ContentType.Application.Json)
