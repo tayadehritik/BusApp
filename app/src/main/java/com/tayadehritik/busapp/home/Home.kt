@@ -221,7 +221,9 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         task.addOnSuccessListener {
             //do location requests here
             println("do location requests here")
-            val intent = Intent(this,MyNavigationService::class.java)
+            val intent = Intent(this,MyNavigationService::class.java).apply {
+                action = "start"
+            }
             this.startForegroundService(intent)
         }
 
