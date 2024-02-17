@@ -52,6 +52,9 @@ class MyNavigationService: Service() {
         super.onCreate()
         auth = Firebase.auth
         userNetwork = UserNetwork(auth.currentUser!!.uid)
+        GlobalScope.launch {
+            userNetwork!!.openUserUpdateConnection()
+        }
         locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,1000)
             .build()
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -66,13 +69,16 @@ class MyNavigationService: Service() {
         }
         else if(intent?.action == STOPACTION)
         {
-            stopForeground(true)
+
             val user = User(auth.currentUser!!.uid,false,"100","", 0.0,0.0)
             //update location on server
             GlobalScope.launch {
                 userNetwork?.updateUser(user);
             }
-            stopSelf();
+            stopForeground(true)
+            stopLocationUpdates()
+            stopSelf()
+
         }
 
 
@@ -105,6 +111,7 @@ class MyNavigationService: Service() {
                 .addAction(R.drawable.ic_launcher_background, "STOP", stopPendingIntent)
 
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            //open websocket connection
 
             //get device location lat long
             locationCallback = object : LocationCallback() {
@@ -151,6 +158,11 @@ class MyNavigationService: Service() {
         }
 
     }
+
+    private fun stopLocationUpdates() {
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+    }
+
 
 
     override fun onDestroy() {

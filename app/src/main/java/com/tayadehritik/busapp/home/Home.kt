@@ -31,6 +31,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
 import com.google.android.gms.tasks.Task
@@ -43,10 +44,18 @@ import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.adapters.ListAdapter
 import com.tayadehritik.busapp.databinding.ActivityHomeBinding
 import com.tayadehritik.busapp.models.Route
+import com.tayadehritik.busapp.models.User
+import com.tayadehritik.busapp.models.Users
 import com.tayadehritik.busapp.network.RouteNetwork
 import com.tayadehritik.busapp.network.UserNetwork
 import com.tayadehritik.busapp.service.MyNavigationService
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.converter
+import io.ktor.serialization.deserialize
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -74,6 +83,8 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
 
     lateinit var requestPermissionLauncher:ActivityResultLauncher<String>
     lateinit var requestPermissionMultipleLauncher:ActivityResultLauncher<Array<String>>
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -191,6 +202,8 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(18.6598469, 73.77727039999999), 20f))
         //updateLocationUI()
 
+        updateLocationOfBusOnMap("100");
+
     }
 
 
@@ -198,13 +211,36 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
 
 
     fun updateLocationOfBusOnMap(bus:String) {
-
+        val marker = map!!.addMarker(MarkerOptions().position(LatLng(18.6598469, 73.77727039999999)).title("Bus"))
+        var connection:DefaultClientWebSocketSession? = null
         locationFetchingJob = lifecycleScope.launch {
-            while(true) {
+
+            connection =  userNetwork!!.openGetUsersTravellingOnBusConnection()
+            connection!!.incoming.consumeEach {
+
+                val users = connection!!.converter!!.deserialize<Users>(it)
+                for(user in users.users)
+                {
+                    marker!!.position = LatLng(user.lat, user.long)
+                }
 
             }
 
-            delay(1000)
+
+
+
+        }
+
+        lifecycleScope.launch {
+            while(true) {
+                println("here")
+                if(connection != null)
+                {
+                    connection!!.send(Frame.Text(bus))
+                }
+
+                delay(1000)
+            }
         }
 
     }
