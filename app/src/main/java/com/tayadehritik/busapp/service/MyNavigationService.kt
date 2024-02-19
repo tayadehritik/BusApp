@@ -22,9 +22,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tayadehritik.busapp.R
+import com.tayadehritik.busapp.models.Route
 import com.tayadehritik.busapp.models.User
 import com.tayadehritik.busapp.network.UserNetwork
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.lang.Exception
@@ -45,16 +47,17 @@ class MyNavigationService: Service() {
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest:LocationRequest
 
+    private lateinit var route:Route
 
+    private var job1:Job? = null
+    private var job2:Job? = null
 
 
     override fun onCreate() {
         super.onCreate()
         auth = Firebase.auth
         userNetwork = UserNetwork(auth.currentUser!!.uid)
-        GlobalScope.launch {
-            userNetwork!!.openUserUpdateConnection()
-        }
+
         locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,1000)
             .build()
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -63,20 +66,26 @@ class MyNavigationService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
         if(intent?.action == STARTACTION)
         {
+            route = Route(intent!!.getStringExtra("bus")!!,intent.getStringExtra("route")!!)
+
+            job1 = GlobalScope.launch {
+                try {
+                    userNetwork!!.openUserUpdateConnection()
+                }
+                finally {
+                    userNetwork!!.stopUserUpdateConnection()
+                }
+            }
             startForeground()
         }
         else if(intent?.action == STOPACTION)
         {
 
-            val user = User(auth.currentUser!!.uid,false,"100","", 0.0,0.0)
-            //update location on server
-            GlobalScope.launch {
-                userNetwork?.updateUser(user);
-            }
             stopForeground(true)
-            stopLocationUpdates()
+
             stopSelf()
 
         }
@@ -123,7 +132,7 @@ class MyNavigationService: Service() {
                             notification.setContentText("lat: ${location.latitude} long: ${location.longitude}")
                             notify(1,notification.build())
                         }
-                        val user = User(auth.currentUser!!.uid,true,"100","HINJEWADI PHASE 3 TO MANAPA", location.latitude,location.longitude)
+                        val user = User(auth.currentUser!!.uid,true,route.bus,route.route, location.latitude,location.longitude)
                         //update location on server
                         GlobalScope.launch {
                             userNetwork?.updateUser(user);
@@ -166,6 +175,17 @@ class MyNavigationService: Service() {
 
 
     override fun onDestroy() {
+        println("service is being stopped")
+        val user = User(auth.currentUser!!.uid,false,route.bus,route.route, 0.0,0.0)
+        //update location on server
+        GlobalScope.launch {
+
+            userNetwork?.updateUser(user);
+
+        }
+
+        job1!!.cancel()
+        stopLocationUpdates()
         super.onDestroy()
     }
     override fun onBind(intent: Intent?): IBinder? {

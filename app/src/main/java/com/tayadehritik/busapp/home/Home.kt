@@ -1,27 +1,24 @@
 package com.tayadehritik.busapp.home
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Location
-import android.os.Build
 import android.os.Bundle
-import android.widget.ListView
+import android.text.TextWatcher
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.registerForActivityResult
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import androidx.core.content.ContextCompat
-import androidx.core.location.LocationRequestCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.LocationSettingsResponse
 import com.google.android.gms.location.Priority
@@ -31,17 +28,20 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
 import com.google.android.gms.tasks.Task
+import com.google.android.material.search.SearchBar
 import com.google.android.material.search.SearchView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.maps.android.PolyUtil
+import com.tayadehritik.busapp.MainActivity
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.adapters.ListAdapter
+import com.tayadehritik.busapp.adapters.RoutesAdapter
 import com.tayadehritik.busapp.databinding.ActivityHomeBinding
 import com.tayadehritik.busapp.models.Route
 import com.tayadehritik.busapp.models.User
@@ -51,9 +51,9 @@ import com.tayadehritik.busapp.network.UserNetwork
 import com.tayadehritik.busapp.service.MyNavigationService
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.converter
+import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.serialization.deserialize
 import io.ktor.websocket.Frame
-import io.ktor.websocket.readText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
@@ -73,7 +73,8 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityHomeBinding
 
     var locationSharingJob: Job? = null
-    var locationFetchingJob: Job? = null
+    var locationFetchingJob1: Job? = null
+    var locationFetchingJob2: Job? = null
 
     private val defaultLocation = LatLng(-33.8523341, 151.2106085)
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -84,8 +85,11 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     lateinit var requestPermissionLauncher:ActivityResultLauncher<String>
     lateinit var requestPermissionMultipleLauncher:ActivityResultLauncher<Array<String>>
 
+    public lateinit var homeSearchBar: SearchBar
+    public lateinit var homeSearchView: SearchView
+    public lateinit var homeActivity: Home
 
-
+    private lateinit var currentSelectedRoute: Route
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -126,24 +130,38 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         binding = ActivityHomeBinding.inflate(layoutInflater)
 
 
-        val homSearchView:SearchView = binding.homeSearchView
+        homeSearchView = binding.homeSearchView
+        homeSearchBar = binding.searchBar
+        homeActivity = this
 
         auth = Firebase.auth
         userNetwork = UserNetwork(auth.currentUser!!.uid)
 
         val routeNetwork:RouteNetwork = RouteNetwork(auth.currentUser!!.uid)
 
-        lifecycleScope.launch {
-            val animalNameList = routeNetwork.allRoutes()
-            for(i in animalNameList)
-            {
-                val route:Route = Route(i.bus,i.route)
-                arrayList.add(route)
 
+        lifecycleScope.launch {
+
+
+            val routes = routeNetwork.allRoutes()
+            val adapter = RoutesAdapter(routes,homeActivity)
+            println(routes)
+            val recyclerView = binding.recyclerView
+            recyclerView.adapter = adapter
+
+
+            /*homeSearchView
+                .getEditText()
+                .setOnEditorActionListener { v, actionId, event ->
+                    homeSearchBar.setText(homeSearchView.getText())
+                    homeSearchView.hide()
+                    false
+                }*/
+
+            homeSearchView.editText.addTextChangedListener {
+                adapter.filter.filter(it)
             }
-            val listView:ListView = binding.listview
-            val adapter = ListAdapter(arrayList)
-            listView.adapter = adapter
+
         }
 
 
@@ -202,7 +220,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(18.6598469, 73.77727039999999), 20f))
         //updateLocationUI()
 
-        updateLocationOfBusOnMap("100");
+        //updateLocationOfBusOnMap("100");
 
     }
 
@@ -210,33 +228,83 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
 
 
 
-    fun updateLocationOfBusOnMap(bus:String) {
-        val marker = map!!.addMarker(MarkerOptions().position(LatLng(18.6598469, 73.77727039999999)).title("Bus"))
+    fun updateLocationOfBusOnMap(route:Route) {
+
+        map!!.clear()
+
+        currentSelectedRoute = route
+
+        println("here in update")
+        homeSearchView.setText("${route.bus} ${route.route}")
+        homeSearchBar.setText("${route.bus} ${route.route}")
+        homeSearchView.hide()
+
+
         var connection:DefaultClientWebSocketSession? = null
-        locationFetchingJob = lifecycleScope.launch {
 
-            connection =  userNetwork!!.openGetUsersTravellingOnBusConnection()
-            connection!!.incoming.consumeEach {
+        locationFetchingJob1?.cancel()
+        locationFetchingJob2?.cancel()
 
-                val users = connection!!.converter!!.deserialize<Users>(it)
-                for(user in users.users)
-                {
-                    marker!!.position = LatLng(user.lat, user.long)
+        locationFetchingJob1 = lifecycleScope.launch {
+            try {
+                var mapOfUsersAndMarkers = mutableMapOf<String,Marker>()
+
+                connection =  userNetwork!!.openGetUsersTravellingOnBusConnection()
+                connection!!.incoming.consumeEach {
+
+
+
+                    val users = connection!!.converter!!.deserialize<Users>(it)
+
+                    for(user in users.users)
+                    {
+
+                        if(mapOfUsersAndMarkers[user.user_id] == null)
+                        {
+                            val marker = map!!.addMarker(MarkerOptions().position(LatLng(user.lat, user.long)).title("Bus"))
+                            mapOfUsersAndMarkers.put(user.user_id, marker!!)
+                        }
+                        else
+                        {
+                            val marker = mapOfUsersAndMarkers[user.user_id]
+                            marker!!.position = LatLng(user.lat, user.long)
+                        }
+
+
+                    }
+
+                    var userIdList = mutableListOf<String>()
+                    users.users.forEach {
+                        userIdList.add(it.user_id)
+                    }
+
+                    val filteredMapOfUsersAndMarkers = mapOfUsersAndMarkers.filter{entry ->
+                        entry.key !in userIdList
+                    } as MutableMap<String, Marker>
+
+                    filteredMapOfUsersAndMarkers.forEach { user_id, marker ->
+                        marker.remove()
+                        mapOfUsersAndMarkers.remove(user_id)
+                    }
+
                 }
-
             }
+            finally {
 
+                //send stop to server
+                userNetwork!!.stopGetUsersTravellingOnBusConnection()
+            }
 
 
 
         }
 
-        lifecycleScope.launch {
+        locationFetchingJob2 = lifecycleScope.launch {
             while(true) {
                 println("here")
                 if(connection != null)
                 {
-                    connection!!.send(Frame.Text(bus))
+                    connection!!.sendSerialized(route)
                 }
 
                 delay(1000)
@@ -246,6 +314,15 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     }
 
     fun startSharingLocation(bus:String) {
+
+        if(!this::currentSelectedRoute.isInitialized)
+        {
+            Toast.makeText(this,"Please select a route you are travelling on",Toast.LENGTH_SHORT).show()
+            return
+        }
+
+
+
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,1000)
             .build()
 
@@ -259,8 +336,18 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
             println("do location requests here")
             val intent = Intent(this,MyNavigationService::class.java).apply {
                 action = "start"
+                putExtra("bus",currentSelectedRoute.bus)
+                putExtra("route", currentSelectedRoute.route)
             }
+            val stopintent = Intent(this,MyNavigationService::class.java).apply {
+                action = "stop"
+                putExtra("bus",currentSelectedRoute.bus)
+                putExtra("route", currentSelectedRoute.route)
+            }
+
+            stopService(intent)
             this.startForegroundService(intent)
+
         }
 
         task.addOnFailureListener {exception ->

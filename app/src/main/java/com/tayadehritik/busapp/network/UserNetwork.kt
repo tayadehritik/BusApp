@@ -67,6 +67,31 @@ class UserNetwork(userId: String) {
 
 
 
+    public suspend fun openGetUsersTravellingOnBusConnection(): DefaultClientWebSocketSession
+    {
+        return client.webSocketSession(method = HttpMethod.Get, host="www.punebusapp.live", port=8080, path = "/user/bus", block = {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer " + Base64.getEncoder().encodeToString(userId.toByteArray()))
+            }
+        })
+    }
+
+    public suspend fun stopGetUsersTravellingOnBusConnection()
+    {
+        println("stopping connection")
+        client.close()
+    }
+    public suspend fun getUsersTravellingOn(bus:String): List<User>
+    {
+        val allUsers:Users = client.get("https://www.punebusapp.live/user/$bus") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
+            }
+        }.body()
+        return allUsers.users
+    }
+
     public suspend fun openUserUpdateConnection()
     {
         userUpdateSession = client.webSocketSession(method = HttpMethod.Get, host="www.punebusapp.live", port=8080, path = "/user/update", block = {
@@ -84,25 +109,10 @@ class UserNetwork(userId: String) {
 
     }
 
-    public suspend fun openGetUsersTravellingOnBusConnection(): DefaultClientWebSocketSession
+    public suspend fun stopUserUpdateConnection()
     {
-        return client.webSocketSession(method = HttpMethod.Get, host="www.punebusapp.live", port=8080, path = "/user/bus", block = {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer " + Base64.getEncoder().encodeToString(userId.toByteArray()))
-            }
-        })
+        client.close()
     }
-    public suspend fun getUsersTravellingOn(bus:String): List<User>
-    {
-        val allUsers:Users = client.get("https://www.punebusapp.live/user/$bus") {
-            contentType(ContentType.Application.Json)
-            headers {
-                append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
-            }
-        }.body()
-        return allUsers.users
-    }
-
     public suspend fun updateUser(user:User)
     {
 
