@@ -112,7 +112,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         requestPermissionMultipleLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             if(it.values.reduce { acc, b -> acc && b  })
             {
-                startSharingLocation("100")
+                startSharingLocation()
             }
             else
             {
@@ -170,7 +170,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
                         ContextCompat.checkSelfPermission(this,Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) -> {
                     //already have the permission
                     println("already have both notification and location permission")
-                    startSharingLocation("100")
+                    startSharingLocation()
                 }
                 else -> {
                     //requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -248,7 +248,6 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
                 connection!!.incoming.consumeEach {
 
 
-
                     val users = connection!!.converter!!.deserialize<Users>(it)
 
                     for(user in users.users)
@@ -308,7 +307,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
 
     }
 
-    fun startSharingLocation(bus:String) {
+    fun startSharingLocation() {
 
         if(!this::currentSelectedBus.isInitialized)
         {
@@ -331,13 +330,17 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
             println("do location requests here")
             val intent = Intent(this,MyNavigationService::class.java).apply {
                 action = "start"
-                putExtra("bus",currentSelectedBus.route_short_name)
-                putExtra("route", currentSelectedBus.trip_headsign)
+                putExtra("route_id",currentSelectedBus.route_id)
+                putExtra("route_short_name", currentSelectedBus.route_short_name)
+                putExtra("shape_id", currentSelectedBus.shape_id)
+                putExtra("trip_headsign", currentSelectedBus.trip_headsign)
             }
             val stopintent = Intent(this,MyNavigationService::class.java).apply {
                 action = "stop"
-                putExtra("bus",currentSelectedBus.route_short_name)
-                putExtra("route", currentSelectedBus.trip_headsign)
+                putExtra("route_id",currentSelectedBus.route_id)
+                putExtra("route_short_name", currentSelectedBus.route_short_name)
+                putExtra("shape_id", currentSelectedBus.shape_id)
+                putExtra("trip_headsign", currentSelectedBus.trip_headsign)
             }
 
             stopService(intent)

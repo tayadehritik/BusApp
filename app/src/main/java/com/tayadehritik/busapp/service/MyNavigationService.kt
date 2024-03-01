@@ -66,7 +66,12 @@ class MyNavigationService: Service() {
 
         if(intent?.action == STARTACTION)
         {
-            bus = Bus(intent!!.getStringExtra("bus")!!,intent.getStringExtra("route")!!,"test","test")
+            bus = Bus(
+                intent!!.getStringExtra("route_id")!!,
+                intent.getStringExtra("route_short_name")!!,
+                intent.getStringExtra("shape_id")!!,
+                intent.getStringExtra("trip_headsign")!!
+            )
 
             job1 = GlobalScope.launch {
                 try {
@@ -129,7 +134,7 @@ class MyNavigationService: Service() {
                             notification.setContentText("lat: ${location.latitude} long: ${location.longitude}")
                             notify(1,notification.build())
                         }
-                        val user = User(auth.currentUser!!.uid,true,bus.route_short_name,bus.trip_headsign, location.latitude,location.longitude)
+                        val user = User(auth.currentUser!!.uid,true,location.latitude,location.longitude , bus.route_id, bus.route_short_name, bus.shape_id,bus.trip_headsign)
                         //update location on server
                         GlobalScope.launch {
                             userNetwork?.updateUser(user);
@@ -173,7 +178,7 @@ class MyNavigationService: Service() {
 
     override fun onDestroy() {
         println("service is being stopped")
-        val user = User(auth.currentUser!!.uid,false,bus.route_short_name,bus.trip_headsign, 0.0,0.0)
+        val user = User(auth.currentUser!!.uid,false,0.0,0.0,bus.route_id, bus.route_short_name, bus.shape_id,bus.trip_headsign)
         //update location on server
         GlobalScope.launch {
 

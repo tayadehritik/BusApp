@@ -50,13 +50,11 @@ class UserNetwork(userId: String) {
     }
 
 
-
-
     public suspend fun addUser()
     {
         val response:HttpResponse = client.post("https://www.punebusapp.live/user") {
             contentType(ContentType.Application.Json)
-            setBody(User(userId,false,"100","",0.0,0.0))
+            setBody(User(userId,false,0.0,0.0,"null","null","null","null"))
         }
 
         Log.d("userresponse", response.status.toString())
@@ -116,15 +114,6 @@ class UserNetwork(userId: String) {
     public suspend fun updateUser(user:User)
     {
 
-        /*val response = client.post("https://www.punebusapp.live/user/update/$userId") {
-            contentType(ContentType.Application.Json)
-            headers {
-                append(HttpHeaders.Authorization, "Bearer " + Base64.getEncoder().encodeToString(userId.toByteArray()))
-            }
-            setBody(user)
-        }
-
-        Log.d("user updated", response.status.toString())*/
         if(this::userUpdateSession.isInitialized)
         {
             userUpdateSession.sendSerialized(user)
