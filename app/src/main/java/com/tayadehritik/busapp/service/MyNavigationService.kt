@@ -4,13 +4,11 @@ import android.Manifest
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
-import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -22,12 +20,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.models.Route
+import com.tayadehritik.busapp.models.Bus
 import com.tayadehritik.busapp.models.User
 import com.tayadehritik.busapp.network.UserNetwork
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
@@ -47,7 +44,7 @@ class MyNavigationService: Service() {
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest:LocationRequest
 
-    private lateinit var route:Route
+    private lateinit var bus: Bus
 
     private var job1:Job? = null
     private var job2:Job? = null
@@ -69,7 +66,7 @@ class MyNavigationService: Service() {
 
         if(intent?.action == STARTACTION)
         {
-            route = Route(intent!!.getStringExtra("bus")!!,intent.getStringExtra("route")!!)
+            bus = Bus(intent!!.getStringExtra("bus")!!,intent.getStringExtra("route")!!,"test","test")
 
             job1 = GlobalScope.launch {
                 try {
@@ -132,7 +129,7 @@ class MyNavigationService: Service() {
                             notification.setContentText("lat: ${location.latitude} long: ${location.longitude}")
                             notify(1,notification.build())
                         }
-                        val user = User(auth.currentUser!!.uid,true,route.bus,route.route, location.latitude,location.longitude)
+                        val user = User(auth.currentUser!!.uid,true,bus.route_short_name,bus.trip_headsign, location.latitude,location.longitude)
                         //update location on server
                         GlobalScope.launch {
                             userNetwork?.updateUser(user);
@@ -176,7 +173,7 @@ class MyNavigationService: Service() {
 
     override fun onDestroy() {
         println("service is being stopped")
-        val user = User(auth.currentUser!!.uid,false,route.bus,route.route, 0.0,0.0)
+        val user = User(auth.currentUser!!.uid,false,bus.route_short_name,bus.trip_headsign, 0.0,0.0)
         //update location on server
         GlobalScope.launch {
 

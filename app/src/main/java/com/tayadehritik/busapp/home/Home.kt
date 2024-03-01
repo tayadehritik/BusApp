@@ -6,7 +6,6 @@ import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
-import android.text.TextWatcher
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -39,21 +38,18 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.maps.android.PolyUtil
-import com.tayadehritik.busapp.MainActivity
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.adapters.RoutesAdapter
+import com.tayadehritik.busapp.adapters.BusesAdapter
 import com.tayadehritik.busapp.databinding.ActivityHomeBinding
-import com.tayadehritik.busapp.models.Route
-import com.tayadehritik.busapp.models.User
+import com.tayadehritik.busapp.models.Bus
 import com.tayadehritik.busapp.models.Users
-import com.tayadehritik.busapp.network.RouteNetwork
+import com.tayadehritik.busapp.network.BusNetwork
 import com.tayadehritik.busapp.network.UserNetwork
 import com.tayadehritik.busapp.service.MyNavigationService
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.converter
 import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.serialization.deserialize
-import io.ktor.websocket.Frame
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
@@ -68,7 +64,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     private val COLOR_BLACK_ARGB = -0x1000000
     private val POLYLINE_STROKE_WIDTH_PX = 12
 
-    val arrayList = ArrayList<Route>()
+
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ActivityHomeBinding
 
@@ -89,7 +85,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     public lateinit var homeSearchView: SearchView
     public lateinit var homeActivity: Home
 
-    private lateinit var currentSelectedRoute: Route
+    private lateinit var currentSelectedBus: Bus
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -137,15 +133,15 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         auth = Firebase.auth
         userNetwork = UserNetwork(auth.currentUser!!.uid)
 
-        val routeNetwork:RouteNetwork = RouteNetwork(auth.currentUser!!.uid)
+        val busNetwork:BusNetwork = BusNetwork(auth.currentUser!!.uid)
 
 
         lifecycleScope.launch {
 
 
-            val routes = routeNetwork.allRoutes()
-            val adapter = RoutesAdapter(routes,homeActivity)
-            println(routes)
+            val buses = busNetwork.allBuses()
+            val adapter = BusesAdapter(buses,homeActivity)
+            println(buses)
             val recyclerView = binding.recyclerView
             recyclerView.adapter = adapter
 
@@ -157,7 +153,6 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
                     homeSearchView.hide()
                     false
                 }*/
-
             homeSearchView.editText.addTextChangedListener {
                 adapter.filter.filter(it)
             }
@@ -228,15 +223,15 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
 
 
 
-    fun updateLocationOfBusOnMap(route:Route) {
+    fun updateLocationOfBusOnMap(bus:Bus) {
 
         map!!.clear()
 
-        currentSelectedRoute = route
+        currentSelectedBus = bus
 
         println("here in update")
-        homeSearchView.setText("${route.bus} ${route.route}")
-        homeSearchBar.setText("${route.bus} ${route.route}")
+        homeSearchView.setText("${bus.route_short_name} ${bus.trip_headsign}")
+        homeSearchBar.setText("${bus.route_short_name} ${bus.trip_headsign}")
         homeSearchView.hide()
 
 
@@ -304,7 +299,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
                 println("here")
                 if(connection != null)
                 {
-                    connection!!.sendSerialized(route)
+                    connection!!.sendSerialized(bus)
                 }
 
                 delay(1000)
@@ -315,7 +310,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
 
     fun startSharingLocation(bus:String) {
 
-        if(!this::currentSelectedRoute.isInitialized)
+        if(!this::currentSelectedBus.isInitialized)
         {
             Toast.makeText(this,"Please select a route you are travelling on",Toast.LENGTH_SHORT).show()
             return
@@ -336,13 +331,13 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
             println("do location requests here")
             val intent = Intent(this,MyNavigationService::class.java).apply {
                 action = "start"
-                putExtra("bus",currentSelectedRoute.bus)
-                putExtra("route", currentSelectedRoute.route)
+                putExtra("bus",currentSelectedBus.route_short_name)
+                putExtra("route", currentSelectedBus.trip_headsign)
             }
             val stopintent = Intent(this,MyNavigationService::class.java).apply {
                 action = "stop"
-                putExtra("bus",currentSelectedRoute.bus)
-                putExtra("route", currentSelectedRoute.route)
+                putExtra("bus",currentSelectedBus.route_short_name)
+                putExtra("route", currentSelectedBus.trip_headsign)
             }
 
             stopService(intent)

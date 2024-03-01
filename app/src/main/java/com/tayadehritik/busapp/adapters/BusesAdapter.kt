@@ -3,25 +3,22 @@ package com.tayadehritik.busapp.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseAdapter
 import android.widget.Filter
 import android.widget.Filterable
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.search.SearchBar
-import com.google.android.material.search.SearchView
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.home.Home
-import com.tayadehritik.busapp.models.Route
+import com.tayadehritik.busapp.models.Bus
 
-class RoutesAdapter(
-    private var dataSet: List<Route>,
+class BusesAdapter(
+    private var dataSet: List<Bus>,
     private var homeActivity:Home
     )  :
-    RecyclerView.Adapter<RoutesAdapter.ViewHolder>(), Filterable {
+    RecyclerView.Adapter<BusesAdapter.ViewHolder>(), Filterable {
 
-        private var filteredDataSet: List<Route> = dataSet
+        private var filteredDataSet: List<Bus> = dataSet
     /**
      * Provide a reference to the type of views that you are using
      * (custom ViewHolder)
@@ -52,8 +49,8 @@ class RoutesAdapter(
 
         // Get element from your dataset at this position and replace the
         // contents of the view with that element
-        viewHolder.busName.text = filteredDataSet[position].bus
-        viewHolder.routeName.text = filteredDataSet[position].route
+        viewHolder.busName.text = filteredDataSet[position].route_short_name
+        viewHolder.routeName.text = filteredDataSet[position].trip_headsign
 
         viewHolder.item.setOnClickListener{
             homeActivity.updateLocationOfBusOnMap(filteredDataSet[position])
@@ -75,8 +72,8 @@ class RoutesAdapter(
                 }
                 else
                 {
-                    val filteredRoutes = arrayListOf<Route>()
-                    dataSet.filter { (it.bus.contains(searchString) or (it.route.contains(searchString))) }.forEach {
+                    val filteredRoutes = arrayListOf<Bus>()
+                    dataSet.filter { (it.route_short_name.contains(searchString) or (it.trip_headsign.contains(searchString))) }.forEach {
                         filteredRoutes.add(it)
                     }
                     results.count = filteredRoutes.size
@@ -88,7 +85,7 @@ class RoutesAdapter(
             }
 
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                filteredDataSet = results!!.values as List<Route>
+                filteredDataSet = results!!.values as List<Bus>
                 notifyDataSetChanged()
             }
 
