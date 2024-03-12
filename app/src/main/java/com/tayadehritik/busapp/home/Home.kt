@@ -76,6 +76,7 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     var userNetwork:UserNetwork? = null
+    var busNetwork:BusNetwork? = null
     private var locationPermissionGranted = false
 
     lateinit var requestPermissionLauncher:ActivityResultLauncher<String>
@@ -133,13 +134,13 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
         auth = Firebase.auth
         userNetwork = UserNetwork(auth.currentUser!!.uid)
 
-        val busNetwork:BusNetwork = BusNetwork(auth.currentUser!!.uid)
+        busNetwork = BusNetwork(auth.currentUser!!.uid)
 
 
         lifecycleScope.launch {
 
 
-            val buses = busNetwork.allBuses()
+            val buses = busNetwork!!.allBuses()
             val adapter = BusesAdapter(buses,homeActivity)
             println(buses)
             val recyclerView = binding.recyclerView
@@ -227,6 +228,8 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
 
         map!!.clear()
 
+        drawBusShapeOnMap(bus)
+
         currentSelectedBus = bus
 
         println("here in update")
@@ -305,6 +308,24 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
+    }
+
+
+    fun drawBusShapeOnMap(bus: Bus)
+    {
+        lifecycleScope.launch {
+            val busShape = busNetwork!!.getBusShape(bus.shape_id)
+            val allPoints = busShape.map { LatLng(it.shape_pt_lat.toDouble(),it.shape_pt_lon.toDouble()) }
+            println(allPoints)
+            val polyline1 = map!!.addPolyline(
+                PolylineOptions()
+                    .startCap(RoundCap())
+                    .endCap(RoundCap())
+                    .color(COLOR_BLACK_ARGB)
+                    .width(POLYLINE_STROKE_WIDTH_PX.toFloat())
+                    .clickable(true)
+                    .addAll(allPoints))
+        }
     }
 
     fun startSharingLocation() {

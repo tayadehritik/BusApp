@@ -1,7 +1,9 @@
 package com.tayadehritik.busapp.network
 
 import com.tayadehritik.busapp.models.Bus
+import com.tayadehritik.busapp.models.BusShape
 import com.tayadehritik.busapp.models.Buses
+import com.tayadehritik.busapp.models.Shape
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
@@ -36,5 +38,16 @@ class BusNetwork(userId:String) {
         }.body()
 
         return allbuses.buses
+    }
+
+    suspend fun getBusShape(shape_id:String): List<Shape> {
+        val busShape: BusShape = client.get("https://www.punebusapp.live/busShape/$shape_id") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
+            }
+        }.body()
+
+        return busShape.busShape
     }
 }
