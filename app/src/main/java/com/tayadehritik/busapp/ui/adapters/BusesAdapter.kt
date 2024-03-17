@@ -1,4 +1,4 @@
-package com.tayadehritik.busapp.adapters
+package com.tayadehritik.busapp.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -9,12 +9,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.home.Home
-import com.tayadehritik.busapp.models.Bus
+import com.tayadehritik.busapp.ui.home.Home
+import com.tayadehritik.busapp.model.Bus
 
 class BusesAdapter(
     private var dataSet: List<Bus>,
-    private var homeActivity:Home
+    private var homeActivity: Home
     )  :
     RecyclerView.Adapter<BusesAdapter.ViewHolder>(), Filterable {
 

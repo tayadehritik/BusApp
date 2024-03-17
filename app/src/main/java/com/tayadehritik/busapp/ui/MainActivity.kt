@@ -1,4 +1,4 @@
-package com.tayadehritik.busapp
+package com.tayadehritik.busapp.ui
 
 import android.os.Bundle
 import android.util.Log
@@ -17,7 +17,8 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.tayadehritik.busapp.network.UserNetwork
+import com.tayadehritik.busapp.R
+import com.tayadehritik.busapp.model.remote.UserNetwork
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -31,8 +32,6 @@ class MainActivity : AppCompatActivity() {
     private var verificationInProgress: Boolean = false
     private lateinit var resendToken: PhoneAuthProvider.ForceResendingToken
     private lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
-
-
 
 
 
@@ -59,7 +58,7 @@ class MainActivity : AppCompatActivity() {
                 // 2 - Auto-retrieval. On some devices Google Play services can automatically
                 //     detect the incoming verification SMS and perform verification without
                 //     user action.
-                Log.d(MainActivity.TAG, "onVerificationCompleted:$credential")
+                Log.d(TAG, "onVerificationCompleted:$credential")
                 verificationInProgress = false
                 signInWithPhoneAuthCredential(credential)
             }
@@ -67,7 +66,7 @@ class MainActivity : AppCompatActivity() {
             override fun onVerificationFailed(e: FirebaseException) {
                 // This callback is invoked in an invalid request for verification is made,
                 // for instance if the the phone number format is not valid.
-                Log.w(MainActivity.TAG, "onVerificationFailed", e)
+                Log.w(TAG, "onVerificationFailed", e)
                 verificationInProgress = false
 
                 if (e is FirebaseAuthInvalidCredentialsException) {
@@ -88,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                 // The SMS verification code has been sent to the provided phone number, we
                 // now need to ask the user to enter the code and then construct a credential
                 // by combining the code with a verification ID.
-                Log.d(MainActivity.TAG, "onCodeSent:$verificationId")
+                Log.d(TAG, "onCodeSent:$verificationId")
                 navController.navigate(R.id.verify)
                 // Save verification ID and resending token so we can use them later
                 storedVerificationId = verificationId
@@ -216,7 +215,7 @@ class MainActivity : AppCompatActivity() {
         //try to add user
         if(user != null)
         {
-            val localuser:UserNetwork = UserNetwork(user.uid)
+            val localuser: UserNetwork = UserNetwork(user.uid)
             lifecycleScope.launch {
                 localuser.addUser()
             }

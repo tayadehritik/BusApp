@@ -1,4 +1,4 @@
-package com.tayadehritik.busapp.home
+package com.tayadehritik.busapp.ui.home
 
 import android.Manifest
 import android.content.Intent
@@ -39,12 +39,12 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.maps.android.PolyUtil
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.adapters.BusesAdapter
+import com.tayadehritik.busapp.ui.adapters.BusesAdapter
 import com.tayadehritik.busapp.databinding.ActivityHomeBinding
-import com.tayadehritik.busapp.models.Bus
-import com.tayadehritik.busapp.models.Users
-import com.tayadehritik.busapp.network.BusNetwork
-import com.tayadehritik.busapp.network.UserNetwork
+import com.tayadehritik.busapp.model.Bus
+import com.tayadehritik.busapp.model.Users
+import com.tayadehritik.busapp.model.remote.BusNetwork
+import com.tayadehritik.busapp.model.remote.UserNetwork
 import com.tayadehritik.busapp.service.MyNavigationService
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.converter
@@ -75,8 +75,8 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
     private val defaultLocation = LatLng(-33.8523341, 151.2106085)
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
-    var userNetwork:UserNetwork? = null
-    var busNetwork:BusNetwork? = null
+    var userNetwork: UserNetwork? = null
+    var busNetwork: BusNetwork? = null
     private var locationPermissionGranted = false
 
     lateinit var requestPermissionLauncher:ActivityResultLauncher<String>
@@ -325,6 +325,9 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
                     .width(POLYLINE_STROKE_WIDTH_PX.toFloat())
                     .clickable(true)
                     .addAll(allPoints))
+
+            map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(allPoints[0], 14f))
+
         }
     }
 
@@ -377,7 +380,8 @@ class Home : AppCompatActivity(), OnMapReadyCallback {
                     // Show the dialog by calling startResolutionForResult(),
                     // and check the result in onActivityResult().
                     exception.startResolutionForResult(this@Home,
-                        REQUEST_CHECK_SETTINGS)
+                        REQUEST_CHECK_SETTINGS
+                    )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     // Ignore the error.
                 }

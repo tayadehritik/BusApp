@@ -20,9 +20,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.models.Bus
-import com.tayadehritik.busapp.models.User
-import com.tayadehritik.busapp.network.UserNetwork
+import com.tayadehritik.busapp.model.Bus
+import com.tayadehritik.busapp.model.User
+import com.tayadehritik.busapp.model.remote.UserNetwork
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

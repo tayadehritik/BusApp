@@ -1,19 +1,14 @@
-package com.tayadehritik.busapp.network
+package com.tayadehritik.busapp.model.remote
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
-import com.tayadehritik.busapp.models.User
-import com.tayadehritik.busapp.models.Users
+import com.tayadehritik.busapp.model.User
+import com.tayadehritik.busapp.model.Users
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.websocket.ClientWebSocketSession
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.plugins.websocket.converter
 import io.ktor.client.plugins.websocket.sendSerialized
-import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -81,7 +76,7 @@ class UserNetwork(userId: String) {
     }
     public suspend fun getUsersTravellingOn(bus:String): List<User>
     {
-        val allUsers:Users = client.get("https://www.punebusapp.live/user/$bus") {
+        val allUsers: Users = client.get("https://www.punebusapp.live/user/$bus") {
             contentType(ContentType.Application.Json)
             headers {
                 append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
@@ -111,7 +106,7 @@ class UserNetwork(userId: String) {
     {
         client.close()
     }
-    public suspend fun updateUser(user:User)
+    public suspend fun updateUser(user: User)
     {
 
         if(this::userUpdateSession.isInitialized)

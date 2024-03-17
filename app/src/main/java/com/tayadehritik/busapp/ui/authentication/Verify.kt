@@ -1,4 +1,4 @@
-package com.tayadehritik.busapp.authentication
+package com.tayadehritik.busapp.ui.authentication
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.tayadehritik.busapp.MainActivity
+import com.tayadehritik.busapp.ui.MainActivity
 import com.tayadehritik.busapp.R
 import java.util.regex.Pattern
 

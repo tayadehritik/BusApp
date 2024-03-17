@@ -1,9 +1,9 @@
-package com.tayadehritik.busapp.network
+package com.tayadehritik.busapp.model.remote
 
-import com.tayadehritik.busapp.models.Bus
-import com.tayadehritik.busapp.models.BusShape
-import com.tayadehritik.busapp.models.Buses
-import com.tayadehritik.busapp.models.Shape
+import com.tayadehritik.busapp.model.Bus
+import com.tayadehritik.busapp.model.BusShape
+import com.tayadehritik.busapp.model.Buses
+import com.tayadehritik.busapp.model.Shape
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json

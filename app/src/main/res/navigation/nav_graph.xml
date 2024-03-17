@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/mainFragment"
-        android:name="com.tayadehritik.busapp.MainFragment"
+        android:name="com.tayadehritik.busapp.ui.MainFragment"
         android:label="fragment_main"
         tools:layout="@layout/fragment_main" >
         <action
@@ -22,7 +22,7 @@
         app:startDestination="@id/authenticationHostFragment">
         <fragment
             android:id="@+id/authenticationHostFragment"
-            android:name="com.tayadehritik.busapp.authentication.Login"
+            android:name="com.tayadehritik.busapp.ui.authentication.Login"
             android:label="fragment_authentication_host"
             tools:layout="@layout/fragment_authentication_login">
             <action
@@ -31,7 +31,7 @@
         </fragment>
         <fragment
             android:id="@+id/verify"
-            android:name="com.tayadehritik.busapp.authentication.Verify"
+            android:name="com.tayadehritik.busapp.ui.authentication.Verify"
             android:label="fragment_authentication_verify"
             tools:layout="@layout/fragment_authentication_verify"/>
         <action
@@ -41,7 +41,7 @@
     </navigation>
     <activity
         android:id="@+id/home"
-        android:name="com.tayadehritik.busapp.home.Home"
+        android:name="com.tayadehritik.busapp.ui.home.Home"
         android:label="activity_home"
         tools:layout="@layout/activity_home" />
 
