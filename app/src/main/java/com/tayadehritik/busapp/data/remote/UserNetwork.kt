@@ -1,8 +1,8 @@
-package com.tayadehritik.busapp.model.remote
+package com.tayadehritik.busapp.data.remote
 
 import android.util.Log
-import com.tayadehritik.busapp.model.User
-import com.tayadehritik.busapp.model.Users
+import com.tayadehritik.busapp.data.User
+import com.tayadehritik.busapp.data.Users
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation

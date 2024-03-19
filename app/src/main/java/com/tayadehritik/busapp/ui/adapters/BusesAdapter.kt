@@ -10,7 +10,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.ui.home.Home
-import com.tayadehritik.busapp.model.Bus
+import com.tayadehritik.busapp.data.Bus
 
 class BusesAdapter(
     private var dataSet: List<Bus>,

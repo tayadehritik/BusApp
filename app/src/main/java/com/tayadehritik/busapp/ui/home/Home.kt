@@ -41,10 +41,10 @@ import com.google.maps.android.PolyUtil
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.ui.adapters.BusesAdapter
 import com.tayadehritik.busapp.databinding.ActivityHomeBinding
-import com.tayadehritik.busapp.model.Bus
-import com.tayadehritik.busapp.model.Users
-import com.tayadehritik.busapp.model.remote.BusNetwork
-import com.tayadehritik.busapp.model.remote.UserNetwork
+import com.tayadehritik.busapp.data.Bus
+import com.tayadehritik.busapp.data.Users
+import com.tayadehritik.busapp.data.remote.BusNetwork
+import com.tayadehritik.busapp.data.remote.UserNetwork
 import com.tayadehritik.busapp.service.MyNavigationService
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.converter

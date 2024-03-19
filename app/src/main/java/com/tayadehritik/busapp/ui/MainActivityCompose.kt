@@ -39,7 +39,9 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import com.tayadehritik.busapp.ui.authentication.LoginOrSignUp
+import com.tayadehritik.busapp.ui.navigation.NavGraph
 
 
 class MainActivityCompose : ComponentActivity() {
@@ -48,18 +50,13 @@ class MainActivityCompose : ComponentActivity() {
 
             enableEdgeToEdge()
             setContent {
-                // the rest of the app
-                BusAppTheme {
-                    LoginOrSignUp()
+            BusAppTheme {
+                    val navController = rememberNavController()
+                    NavGraph(navController = navController)
                 }
         }
     }
 }
 
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun Test() {
-    LoginOrSignUp()
-}
 

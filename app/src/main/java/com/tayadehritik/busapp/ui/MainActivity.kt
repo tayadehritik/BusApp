@@ -18,7 +18,7 @@ import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.model.remote.UserNetwork
+import com.tayadehritik.busapp.data.remote.UserNetwork
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 

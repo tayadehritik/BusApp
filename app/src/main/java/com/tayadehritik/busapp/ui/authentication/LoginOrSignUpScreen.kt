@@ -21,9 +21,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -31,9 +28,29 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.*
 
 @Composable
-fun LoginOrSignUp() {
+fun LoginOrSignUpScreen(
+    viewModel:LoginOrSignUpViewModel
+){
+    val loginOrSignUpUIState by viewModel.loginOrSignUpUIState.collectAsState()
+    LoginOrSignUp(
+        loginOrSignUpUIState.phoneNumber,
+        loginOrSignUpUIState.isError,
+        onInputPhoneNumber = {viewModel.inputPhoneNumber(it)},
+        onSubmitPhoneNumber = {viewModel.submitPhoneNumber(it)}
+    )
+
+}
+@Composable
+fun LoginOrSignUp(
+    phoneNumber:String,
+    isError:Boolean,
+    onInputPhoneNumber: (phoneNumber:String) -> Unit,
+    onSubmitPhoneNumber: (SoftwareKeyboardController?) -> Unit
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surface
@@ -49,12 +66,7 @@ fun LoginOrSignUp() {
             Column(
                 modifier = Modifier
                     .widthIn(200.dp,300.dp)
-            ) {
-
-                var text by rememberSaveable { mutableStateOf("") }
-                var inputError by rememberSaveable { mutableStateOf(false) }
-                val keyboardController = LocalSoftwareKeyboardController.current
-
+                ) {
                 Text(
                     text = "Welcome to\nPune Bus App",
                     style = MaterialTheme.typography.displaySmall
@@ -63,15 +75,11 @@ fun LoginOrSignUp() {
                     .width(10.dp)
                     .height(20.dp))
                 OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth()
-                    ,
-                    value = text,
-                    isError = inputError,
+                    modifier = Modifier.fillMaxWidth(),
+                    value = phoneNumber,
+                    isError = isError,
                     leadingIcon = { Icon(Icons.Rounded.Call, contentDescription = "Phone Number") },
-                    onValueChange = {
-                        text = if (it.length <= 10) it else text
-                        inputError = validatePhoneNumberInput(text)
-                    },
+                    onValueChange = onInputPhoneNumber,
                     prefix = { Text("+91") },
                     label = { Text("Phone Number") },
                     supportingText = {
@@ -82,28 +90,22 @@ fun LoginOrSignUp() {
                         )
                         Text(
                             modifier = Modifier.fillMaxWidth(),
-                            text = "Limit: ${text.length}/10",
+                            text = "Limit: ${phoneNumber.length}/10",
                             textAlign = TextAlign.End,
                         )
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     keyboardActions = KeyboardActions(
-                        onDone = {
-                            inputError = submitPhoneNumber(keyboardController,text)
-                        }
-
+                        onDone = { onSubmitPhoneNumber(keyboardController) }
                     )
-
                 )
                 Spacer(modifier = Modifier
                     .width(10.dp)
                     .height(20.dp))
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        inputError = submitPhoneNumber(keyboardController,text)
-                    }
+                    onClick = { onSubmitPhoneNumber(keyboardController) }
                 ) {
                     Text(text = "Log In")
                 }
@@ -111,26 +113,7 @@ fun LoginOrSignUp() {
             }
 
         }
-
     }
-
-}
-
-fun validatePhoneNumberInput(text: String):Boolean {
-    return text.length > 10 || Regex("""\D""").containsMatchIn(text)
 }
 
 
-fun validatePhoneNumber(phoneNumber:String): Boolean {
-    println("here $phoneNumber")
-    val pattern = Regex("""^\+91[\d]{10}$""")
-    return pattern.matches(phoneNumber)
-}
-
-fun submitPhoneNumber(keyboardController: SoftwareKeyboardController?, phoneNumber: String): Boolean {
-    val isWrong = !validatePhoneNumber("+91$phoneNumber")
-    if(isWrong) return true
-    //travel to other compose with phone number
-    keyboardController?.hide()
-    return false
-}

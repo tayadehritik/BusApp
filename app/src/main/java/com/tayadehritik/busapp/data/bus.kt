@@ -1,4 +1,4 @@
-package com.tayadehritik.busapp.model
+package com.tayadehritik.busapp.data
 
 import kotlinx.serialization.Serializable
 
