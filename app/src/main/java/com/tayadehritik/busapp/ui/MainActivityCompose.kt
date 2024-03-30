@@ -25,6 +25,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -41,22 +42,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.tayadehritik.busapp.ui.authentication.LoginOrSignUp
+import com.tayadehritik.busapp.ui.authentication.LoginOrSignUpScreen
+import com.tayadehritik.busapp.ui.authentication.LoginOrSignUpViewModel
 import com.tayadehritik.busapp.ui.navigation.NavGraph
 
 
 class MainActivityCompose : ComponentActivity() {
+
+    private val viewModel:MainViewModel = MainViewModel()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
             enableEdgeToEdge()
             setContent {
             BusAppTheme {
+                    val startDestination by viewModel.startDestination.collectAsState()
                     val navController = rememberNavController()
-                    NavGraph(navController = navController)
+                    NavGraph(navController = navController, startDestination = startDestination)
                 }
         }
     }
 }
+
 
 
 
