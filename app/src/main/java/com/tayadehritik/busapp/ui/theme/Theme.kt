@@ -330,7 +330,7 @@ fun BusAppTheme(
   if (!view.isInEditMode) {
     SideEffect {
       val window = (view.context as Activity).window
-      window.statusBarColor = busappcolorScheme.surface.toArgb()
+      window.statusBarColor = Color.Transparent.toArgb() //busappcolorScheme.surface.toArgb()
       WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
     }
   }

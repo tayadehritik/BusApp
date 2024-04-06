@@ -116,6 +116,10 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-gcm:17.0.0")
 
+    // Android Maps Compose composables for the Maps SDK for Android
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+
+
 
 
 

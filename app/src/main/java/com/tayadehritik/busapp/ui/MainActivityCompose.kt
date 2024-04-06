@@ -3,6 +3,7 @@ package com.tayadehritik.busapp.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +36,8 @@ import com.tayadehritik.busapp.ui.theme.BusAppTheme
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
@@ -58,7 +61,7 @@ class MainActivityCompose : ComponentActivity() {
                     val startDestination by viewModel.startDestination.collectAsState()
                     val navController = rememberNavController()
                     NavGraph(navController = navController, startDestination = startDestination)
-                }
+            }
         }
     }
 }
