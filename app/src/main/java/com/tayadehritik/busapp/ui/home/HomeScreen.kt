@@ -1,8 +1,12 @@
 package com.tayadehritik.busapp.ui.home
 
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Insets
+import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -44,6 +48,7 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,8 +58,10 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +78,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.clustering.ClusterItem
@@ -84,16 +95,20 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.tayadehritik.busapp.R
+import com.tayadehritik.busapp.ui.MainActivityCompose
 import com.tayadehritik.busapp.ui.common.LoadingDialog
+import com.tayadehritik.busapp.ui.common.PermissionBox
 import com.tayadehritik.busapp.ui.list_items.BusItem
 
 private val viewModel:HomeScreenViewModel = HomeScreenViewModel()
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Preview
 @Composable
 fun HomeScreen()
 {
+
+
     val mapStyleOptions =
         if(isSystemInDarkTheme())
             MapStyleOptions.loadRawResourceStyle(LocalContext.current,R.raw.style_json_dark)
@@ -104,6 +119,24 @@ fun HomeScreen()
     val fetchingBuses by viewModel.fetchingBuses.collectAsState()
     val buses by viewModel.buses.collectAsState()
     var searchViewActive by remember { mutableStateOf(false) }
+
+    val activityPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        Manifest.permission.ACTIVITY_RECOGNITION
+    } else {
+        "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+    }
+
+    val listOfPermissions = listOf(activityPermission)
+    val permissionState = rememberMultiplePermissionsState(permissions = listOfPermissions) { map ->
+        val rejectedPermissions = map.filterValues { !it }.keys
+        if (rejectedPermissions.none { it in listOfPermissions }) {
+            println("Start Listening to activities")
+        } else {
+            println("${rejectedPermissions.joinToString()} required for this feature to work")
+
+        }
+    }
+
 
     Scaffold(
         topBar = {
@@ -161,6 +194,16 @@ fun HomeScreen()
                 }
             }
 
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = {
+
+                    permissionState.launchMultiplePermissionRequest()
+                }
+            ) {
+                Text(text = "Start listening for activities")
+            }
         }
     ) { contentPadding  ->
 
@@ -172,7 +215,6 @@ fun HomeScreen()
                     compassEnabled = false,
                     zoomControlsEnabled = false)
             ) {
-
 
             }
 
