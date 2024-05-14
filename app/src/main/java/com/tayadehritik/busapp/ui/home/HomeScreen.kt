@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Insets
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -79,6 +80,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.clustering.ClusterItem
@@ -99,13 +102,12 @@ import com.tayadehritik.busapp.ui.list_items.BusItem
 
 private val viewModel:HomeScreenViewModel = HomeScreenViewModel()
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Preview
 @Composable
 fun HomeScreen()
 {
 
-    val activityContext = LocalContext.current as MainActivityCompose
 
     val mapStyleOptions =
         if(isSystemInDarkTheme())
@@ -122,6 +124,17 @@ fun HomeScreen()
         Manifest.permission.ACTIVITY_RECOGNITION
     } else {
         "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+    }
+
+    val listOfPermissions = listOf(activityPermission)
+    val permissionState = rememberMultiplePermissionsState(permissions = listOfPermissions) { map ->
+        val rejectedPermissions = map.filterValues { !it }.keys
+        if (rejectedPermissions.none { it in listOfPermissions }) {
+            println("Start Listening to activities")
+        } else {
+            println("${rejectedPermissions.joinToString()} required for this feature to work")
+
+        }
     }
 
 
@@ -186,7 +199,7 @@ fun HomeScreen()
             ExtendedFloatingActionButton(
                 onClick = {
 
-                    //permissionBox.askPermission()
+                    permissionState.launchMultiplePermissionRequest()
                 }
             ) {
                 Text(text = "Start listening for activities")
@@ -203,10 +216,6 @@ fun HomeScreen()
                     zoomControlsEnabled = false)
             ) {
 
-            }
-
-            PermissionBox(permissions = listOf(activityPermission)) {
-                println("Permission Granted in HomeScreen")
             }
 
         }

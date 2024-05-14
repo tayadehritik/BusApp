@@ -3,6 +3,8 @@ package com.tayadehritik.busapp.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -25,6 +27,7 @@ class HomeScreenViewModel: ViewModel() {
 
     private val busNetwork:BusNetwork = BusNetwork(Firebase.auth.currentUser!!.uid)
     private var allBuses:List<Bus> = listOf<Bus>()
+
     fun updateSearchQuery(value:String) {
         _searchQuery.value = value
         _buses.value = allBuses

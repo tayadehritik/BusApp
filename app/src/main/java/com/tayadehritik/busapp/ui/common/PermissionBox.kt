@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
@@ -41,44 +42,11 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.tayadehritik.busapp.ui.MainActivityCompose
 
-/**
- * The PermissionBox uses a [Box] to show a simple permission request UI when the provided [permission]
- * is revoked or the provided [onGranted] content if the permission is granted.
- *
- * This composable follows the permission request flow but for a complete example check the samples
- * under privacy/permissions
- */
-@Composable
-fun PermissionBox(
-    modifier: Modifier = Modifier,
-    permission: String,
-    description: String? = null,
-    contentAlignment: Alignment = Alignment.TopStart,
-    onGranted: () -> Unit,
-) {
-    PermissionBox(
-        modifier,
-        permissions = listOf(permission),
-        requiredPermissions = listOf(permission),
-        description,
-        contentAlignment,
-    ) { onGranted() }
-}
-
-/**
- * A variation of [PermissionBox] that takes a list of permissions and only calls [onGranted] when
- * all the [requiredPermissions] are granted.
- *
- * By default it assumes that all [permissions] are required.
- */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionBox(
-    modifier: Modifier = Modifier,
     permissions: List<String>,
     requiredPermissions: List<String> = permissions,
-    description: String? = null,
-    contentAlignment: Alignment = Alignment.TopStart,
     onGranted: (List<String>) -> Unit,
 ) {
     val context = LocalContext.current
@@ -93,7 +61,7 @@ fun PermissionBox(
         } else {
             "${rejectedPermissions.joinToString()} required for this feature to work"
         }
-        println(errorText)
+        Toast.makeText(context, errorText, Toast.LENGTH_LONG)
     }
     val allRequiredPermissionsGranted =
         permissionState.revokedPermissions.none { it.permission in requiredPermissions }
@@ -113,138 +81,4 @@ fun PermissionBox(
 
     }
 
-    /*Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .then(modifier),
-        contentAlignment = if (allRequiredPermissionsGranted) {
-            contentAlignment
-        } else {
-            Alignment.Center
-        },
-    ) {
-        if (allRequiredPermissionsGranted) {
-            onGranted(
-                permissionState.permissions
-                    .filter { it.status.isGranted }
-                    .map { it.permission },
-            )
-        } else {
-
-            permissionState.launchMultiplePermissionRequest()
-            *//*PermissionScreen(
-                permissionState,
-                description,
-                errorText,
-            )
-*//*
-            FloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                onClick = {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        data = Uri.parse("package:${context.packageName}")
-                    }
-                    context.startActivity(intent)
-                },
-            ) {
-                Icon(imageVector = Icons.Rounded.Settings, contentDescription = "App settings")
-            }
-        }
-    }*/
-}
-
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-private fun PermissionScreen(
-    state: MultiplePermissionsState,
-    description: String?,
-    errorText: String,
-) {
-    var showRationale by remember(state) {
-        mutableStateOf(false)
-    }
-
-    val permissions = remember(state.revokedPermissions) {
-        state.revokedPermissions.joinToString("\n") {
-            " - " + it.permission.removePrefix("android.permission.")
-        }
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = "Sample requires permission/s:",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(16.dp),
-        )
-        Text(
-            text = permissions,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(16.dp),
-        )
-        if (description != null) {
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(16.dp),
-            )
-        }
-        Button(
-            onClick = {
-                if (state.shouldShowRationale) {
-                    showRationale = true
-                } else {
-                    state.launchMultiplePermissionRequest()
-                }
-            },
-        ) {
-            Text(text = "Grant permissions")
-        }
-        if (errorText.isNotBlank()) {
-            Text(
-                text = errorText,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(16.dp),
-            )
-        }
-    }
-    if (showRationale) {
-        AlertDialog(
-            onDismissRequest = {
-                showRationale = false
-            },
-            title = {
-                Text(text = "Permissions required by the sample")
-            },
-            text = {
-                Text(text = "The sample requires the following permissions to work:\n $permissions")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showRationale = false
-                        state.launchMultiplePermissionRequest()
-                    },
-                ) {
-                    Text("Continue")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showRationale = false
-                    },
-                ) {
-                    Text("Dismiss")
-                }
-            },
-        )
-    }
 }

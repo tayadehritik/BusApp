@@ -54,23 +54,7 @@ import com.tayadehritik.busapp.ui.navigation.NavGraph
 class MainActivityCompose : ComponentActivity() {
 
     private val viewModel:MainViewModel = MainViewModel()
-    val requestPermissionLauncher = this.registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                // Permission is granted. Continue the action or workflow in your
-                // app.
-                println("In Main Activity Permission Granted")
 
-            } else {
-                // Explain to the user that the feature is unavailable because the
-                // feature requires a permission that the user has denied. At the
-                // same time, respect the user's decision. Don't link to system
-                // settings in an effort to convince the user to change their
-                // decision.
-                println("Permission could not be granted")
-            }
-        }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
             enableEdgeToEdge()
