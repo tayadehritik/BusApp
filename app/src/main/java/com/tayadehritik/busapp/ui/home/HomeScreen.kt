@@ -7,6 +7,7 @@ import android.graphics.Insets
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresPermission
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -66,6 +67,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,24 +98,36 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.ui.MainActivityCompose
+import com.tayadehritik.busapp.ui.activity_recog.ActivityRecognitionManager
 import com.tayadehritik.busapp.ui.common.LoadingDialog
 import com.tayadehritik.busapp.ui.common.PermissionBox
 import com.tayadehritik.busapp.ui.list_items.BusItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 private val viewModel:HomeScreenViewModel = HomeScreenViewModel()
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+@RequiresPermission(
+    anyOf = [
+        Manifest.permission.ACTIVITY_RECOGNITION,
+        "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+    ]
+)
 @Preview
 @Composable
 fun HomeScreen()
 {
-
+    val context = LocalContext.current
+    val manager = remember { ActivityRecognitionManager(context) }
+    val scope = rememberCoroutineScope()
 
     val mapStyleOptions =
         if(isSystemInDarkTheme())
-            MapStyleOptions.loadRawResourceStyle(LocalContext.current,R.raw.style_json_dark)
+            MapStyleOptions.loadRawResourceStyle(context,R.raw.style_json_dark)
         else
-            MapStyleOptions.loadRawResourceStyle(LocalContext.current,R.raw.style_json_light)
+            MapStyleOptions.loadRawResourceStyle(context,R.raw.style_json_light)
 
     val searchQuery by viewModel.searchQuery.collectAsState()
     val fetchingBuses by viewModel.fetchingBuses.collectAsState()
@@ -131,6 +145,10 @@ fun HomeScreen()
         val rejectedPermissions = map.filterValues { !it }.keys
         if (rejectedPermissions.none { it in listOfPermissions }) {
             println("Start Listening to activities")
+
+            manager.registerActivityTransitions()
+
+
         } else {
             println("${rejectedPermissions.joinToString()} required for this feature to work")
 
