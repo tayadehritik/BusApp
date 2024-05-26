@@ -1,6 +1,7 @@
 package com.tayadehritik.busapp.ui.list_items
 
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,11 +30,12 @@ import com.tayadehritik.busapp.R
 @Preview
 @Composable
 fun BusItem(
+    modifier: Modifier = Modifier,
     routeShortName:String = "100",
     tripHeadSign:String = "Hinjawadi to MaNaPa"
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
