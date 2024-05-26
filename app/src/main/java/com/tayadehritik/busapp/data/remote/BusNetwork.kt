@@ -40,8 +40,8 @@ class BusNetwork(userId:String) {
         return allbuses.buses
     }
 
-    suspend fun getBusShape(shape_id:String): List<Shape> {
-        val busShape: BusShape = client.get("https://www.punebusapp.live/busShape/$shape_id") {
+    suspend fun getBusShape(bus: Bus): List<Shape> {
+        val busShape: BusShape = client.get("https://www.punebusapp.live/busShape/${bus.shape_id}") {
             contentType(ContentType.Application.Json)
             headers {
                 append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))

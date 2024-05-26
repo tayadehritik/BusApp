@@ -84,6 +84,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.clustering.ClusterItem
@@ -91,11 +92,14 @@ import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.algo.NonHierarchicalDistanceBasedAlgorithm
 import com.google.maps.android.clustering.algo.GridBasedAlgorithm
 import com.google.maps.android.clustering.algo.NonHierarchicalViewBasedAlgorithm
+import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
+import com.google.maps.android.compose.rememberCameraPositionState
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.ui.MainActivityCompose
 import com.tayadehritik.busapp.ui.common.LoadingDialog
@@ -114,7 +118,6 @@ fun HomeScreen()
 {
     val context = LocalContext.current
 
-
     val mapStyleOptions =
         if(isSystemInDarkTheme())
             MapStyleOptions.loadRawResourceStyle(context,R.raw.style_json_dark)
@@ -123,17 +126,14 @@ fun HomeScreen()
 
     val searchQuery by viewModel.searchQuery.collectAsState()
     val fetchingBuses by viewModel.fetchingBuses.collectAsState()
+    val fetchingRoute by viewModel.fetchingRoute.collectAsState()
     val buses by viewModel.buses.collectAsState()
+    val currentBusShape by viewModel.currentBusShape.collectAsState()
     var searchViewActive by remember { mutableStateOf(false) }
 
-    val activityPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        Manifest.permission.ACTIVITY_RECOGNITION
-    } else {
-        "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
+    val cameraPositionState: CameraPositionState = rememberCameraPositionState {
+        position = CameraPosition(LatLng(18.5204.toDouble(), 73.8567.toDouble()), 12f, 0f,0f)
     }
-
-    val listOfPermissions = listOf(activityPermission)
-
 
     Scaffold(
         topBar = {
@@ -182,6 +182,12 @@ fun HomeScreen()
                     LazyColumn {
                         items(buses.size) {
                             BusItem(
+                                modifier = Modifier.clickable {
+                                    println("here")
+                                    viewModel.updateCurrentBus(buses[it])
+                                    viewModel.updateSearchQuery("${buses[it].route_short_name} ${buses[it].trip_headsign}")
+                                    searchViewActive = false
+                                },
                                 buses[it].route_short_name,
                                 buses[it].trip_headsign
                             )
@@ -191,27 +197,29 @@ fun HomeScreen()
                 }
             }
 
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = {
-
-                }
-            ) {
-                Text(text = "Start listening for activities")
-            }
         }
     ) { contentPadding  ->
 
         println(contentPadding)
         Box(modifier = Modifier.fillMaxSize()) {
+
+            AnimatedVisibility(visible = fetchingRoute) {
+                LoadingDialog(text = "Fetching route")
+            }
+
             GoogleMap(
+                cameraPositionState = cameraPositionState,
                 properties = MapProperties(mapStyleOptions = mapStyleOptions),
                 uiSettings = MapUiSettings(
                     compassEnabled = false,
                     zoomControlsEnabled = false)
             ) {
-
+                if(currentBusShape != null)
+                {
+                    Polyline(points = currentBusShape!!.map { LatLng(it.shape_pt_lat.toDouble(), it.shape_pt_lon.toDouble()) })
+                    val middleShape = currentBusShape!![currentBusShape!!.size/2]
+                    cameraPositionState.position = CameraPosition.fromLatLngZoom(LatLng(middleShape.shape_pt_lat.toDouble(),middleShape.shape_pt_lon.toDouble()),12f)
+                }
             }
 
         }
