@@ -45,6 +45,13 @@
             <!-- Any inner elements would go here. -->
         </service>
 
+        <receiver android:name=".ui.activity_recog.ActivityRecognitionBroadcastReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="USER-ACTIVITY-DETECTION-INTENT"/>
+            </intent-filter>
+        </receiver>
+
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />

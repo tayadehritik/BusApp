@@ -98,7 +98,6 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.ui.MainActivityCompose
-import com.tayadehritik.busapp.ui.activity_recog.ActivityRecognitionManager
 import com.tayadehritik.busapp.ui.common.LoadingDialog
 import com.tayadehritik.busapp.ui.common.PermissionBox
 import com.tayadehritik.busapp.ui.list_items.BusItem
@@ -120,8 +119,7 @@ private val viewModel:HomeScreenViewModel = HomeScreenViewModel()
 fun HomeScreen()
 {
     val context = LocalContext.current
-    val manager = remember { ActivityRecognitionManager(context) }
-    val scope = rememberCoroutineScope()
+
 
     val mapStyleOptions =
         if(isSystemInDarkTheme())
@@ -141,19 +139,6 @@ fun HomeScreen()
     }
 
     val listOfPermissions = listOf(activityPermission)
-    val permissionState = rememberMultiplePermissionsState(permissions = listOfPermissions) { map ->
-        val rejectedPermissions = map.filterValues { !it }.keys
-        if (rejectedPermissions.none { it in listOfPermissions }) {
-            println("Start Listening to activities")
-
-            manager.registerActivityTransitions()
-
-
-        } else {
-            println("${rejectedPermissions.joinToString()} required for this feature to work")
-
-        }
-    }
 
 
     Scaffold(
@@ -217,7 +202,6 @@ fun HomeScreen()
             ExtendedFloatingActionButton(
                 onClick = {
 
-                    permissionState.launchMultiplePermissionRequest()
                 }
             ) {
                 Text(text = "Start listening for activities")
