@@ -107,13 +107,7 @@ import kotlinx.coroutines.launch
 
 private val viewModel:HomeScreenViewModel = HomeScreenViewModel()
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
-@RequiresPermission(
-    anyOf = [
-        Manifest.permission.ACTIVITY_RECOGNITION,
-        "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
-    ]
-)
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun HomeScreen()
