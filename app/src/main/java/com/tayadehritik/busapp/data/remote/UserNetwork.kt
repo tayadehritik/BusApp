@@ -54,9 +54,7 @@ class UserNetwork(userId: String) {
 
         Log.d("userresponse", response.status.toString())
 
-
     }
-
 
 
 
@@ -114,8 +112,18 @@ class UserNetwork(userId: String) {
             userUpdateSession.sendSerialized(user)
         }
 
-
     }
 
+    suspend fun getUser():User {
+
+        val user:User = client.post("https://www.punebusapp.live/user/$userId") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
+            }
+        }.body()
+
+        return user
+    }
 
 }
