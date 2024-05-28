@@ -2,11 +2,13 @@ package com.tayadehritik.busapp.ui.list_items
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -40,7 +42,7 @@ import com.tayadehritik.busapp.R
 @Composable
 fun TravellingOn(
     routeShortName:String = "100",
-    tripHeadSign:String = "Hinjawadi to MaNaPa",
+    tripHeadSign:String = "Ma Na Pa to Hinjewadi Maan Phase 3",
     onCancel:() -> Unit = {}
 ) {
     ElevatedCard(
@@ -49,16 +51,18 @@ fun TravellingOn(
         )
     ) {
         Row(
-            modifier = Modifier.height(80.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .height(80.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.width(16.dp))
+
             Icon(
-                modifier = Modifier.size(40.dp),
                 painter = painterResource(id = R.drawable.directions_bus),
-                contentDescription = routeShortName
+                contentDescription = "Localized description",
+                tint = Color.Black,
+                modifier = Modifier.padding(16.dp).size(24.dp)
             )
-            Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
                     text = "Travelling on",
@@ -68,13 +72,71 @@ fun TravellingOn(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
+                    modifier = Modifier.width(200.dp),
                     text = "$routeShortName - $tripHeadSign",
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Row(
+                modifier = Modifier
+                    .padding(16.dp,0.dp,0.dp,0.dp)
+                    .fillMaxHeight()
+                    .background(
+                        MaterialTheme.colorScheme.error,
+                        RoundedCornerShape(0.dp)
+                    )
+                    .clickable {
+                               //stop travelling
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.Clear,
+                    contentDescription = "Localized description",
+                    tint = Color.White,
+                    modifier = Modifier.padding(24.dp ).size(24.dp)
+
+                )
+
+            }
+
+
+            /*Row(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .clickable {
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.width(24.dp))
+                Icon(
+                    painter = painterResource(id = R.drawable.directions_bus),
+                    contentDescription = "Localized description",
+                    tint = Color.Black,
+                    modifier = Modifier
+                        .size(40.dp)
+                )
+                Column {
+                    Text(
+                        text = "Travelling on",
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        modifier = Modifier.width(200.dp),
+                        text = "$routeShortName - $tripHeadSign",
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -95,13 +157,8 @@ fun TravellingOn(
                         .padding(24.dp, 0.dp)
                 )
 
-            }
-            /*Spacer(modifier = Modifier.width(16.dp))
-            IconButton(onClick = { *//*TODO*//* }) {
-                Icon(Icons.Filled.Clear, contentDescription = "Localized description")
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            */
+            }*/
+
         }
     }
 }

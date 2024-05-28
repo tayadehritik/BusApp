@@ -70,6 +70,7 @@ fun HomeScreen()
 
     val fetchingRoute by viewModel.fetchingRoute.collectAsState()
     val currentBusShape by viewModel.currentBusShape.collectAsState()
+    val currentBus by viewModel.currentBus.collectAsState()
     val user by viewModel.user.collectAsState()
 
 
@@ -83,11 +84,15 @@ fun HomeScreen()
         },
         floatingActionButton = {
             if(user?.is_travelling == true){
-                TravellingOn(
-                    onCancel = {
-                        //set user is travelling to false
-                    }
-                )
+                currentBus?.let {
+                    TravellingOn(
+                        routeShortName = it.route_short_name,
+                        tripHeadSign = it.trip_headsign,
+                        onCancel = {
+                            //set user is travelling to false
+                        }
+                    )
+                }
             }
             else {
                 ExtendedFloatingActionButton(
