@@ -27,9 +27,9 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.json.Json
 import java.util.Base64
 
-class UserNetwork(userId: String) {
+object UserNetwork {
 
-    private val userId = userId
+    //private val userId = userId
     private lateinit var userUpdateSession:DefaultClientWebSocketSession
 
     private val client = HttpClient() {
@@ -45,7 +45,7 @@ class UserNetwork(userId: String) {
     }
 
 
-    public suspend fun addUser()
+    public suspend fun addUser(userId:String)
     {
         val response:HttpResponse = client.post("https://www.punebusapp.live/user") {
             contentType(ContentType.Application.Json)
@@ -58,7 +58,7 @@ class UserNetwork(userId: String) {
 
 
 
-    public suspend fun openGetUsersTravellingOnBusConnection(): DefaultClientWebSocketSession
+    public suspend fun openGetUsersTravellingOnBusConnection(userId:String): DefaultClientWebSocketSession
     {
         return client.webSocketSession(method = HttpMethod.Get, host="www.punebusapp.live", port=8080, path = "/user/bus", block = {
             headers {
@@ -72,7 +72,7 @@ class UserNetwork(userId: String) {
         println("stopping connection")
         client.close()
     }
-    public suspend fun getUsersTravellingOn(bus:String): List<User>
+    public suspend fun getUsersTravellingOn(userId:String, bus:String): List<User>
     {
         val allUsers: Users = client.get("https://www.punebusapp.live/user/$bus") {
             contentType(ContentType.Application.Json)
@@ -83,7 +83,7 @@ class UserNetwork(userId: String) {
         return allUsers.users
     }
 
-    public suspend fun openUserUpdateConnection()
+    public suspend fun openUserUpdateConnection(userId:String)
     {
         userUpdateSession = client.webSocketSession(method = HttpMethod.Get, host="www.punebusapp.live", port=8080, path = "/user/update", block = {
             headers {
@@ -114,7 +114,7 @@ class UserNetwork(userId: String) {
 
     }
 
-    suspend fun getUser():User {
+    suspend fun getUser(userId:String):User {
 
         val user:User = client.post("https://www.punebusapp.live/user/$userId") {
             contentType(ContentType.Application.Json)

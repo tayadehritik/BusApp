@@ -30,7 +30,7 @@ import java.lang.Exception
 
 class MyNavigationService: Service() {
 
-
+    /*
 
     val STOPACTION = "stop";
     val STARTACTION = "start"
@@ -190,8 +190,11 @@ class MyNavigationService: Service() {
         stopLocationUpdates()
         super.onDestroy()
     }
+    */
+
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
+
 
 }

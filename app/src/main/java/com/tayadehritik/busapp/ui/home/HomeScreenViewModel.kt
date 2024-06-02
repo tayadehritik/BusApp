@@ -43,12 +43,12 @@ class HomeScreenViewModel: ViewModel() {
 
 
     private val busNetwork:BusNetwork = BusNetwork(Firebase.auth.currentUser!!.uid)
-    private val userNetwork:UserNetwork = UserNetwork(Firebase.auth.currentUser!!.uid)
     private var allBuses:List<Bus> = listOf<Bus>()
 
+    val firebaseUserId = Firebase.auth.currentUser!!.uid
     init {
         viewModelScope.launch {
-            _user.value  = userNetwork.getUser()
+            _user.value  = UserNetwork.getUser(firebaseUserId)
             if(_user.value != null){
                 if(_user.value!!.is_travelling){
                     updateCurrentBus(Bus(

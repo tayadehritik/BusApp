@@ -90,6 +90,7 @@ fun HomeScreen()
                         tripHeadSign = it.trip_headsign,
                         onCancel = {
                             //set user is travelling to false
+
                         }
                     )
                 }
