@@ -1,6 +1,8 @@
 package com.tayadehritik.busapp.data.remote
 
+import android.net.http.UrlRequest.Status
 import android.util.Log
+import com.google.firebase.auth.ktx.auth
 import com.tayadehritik.busapp.data.User
 import com.tayadehritik.busapp.data.Users
 import io.ktor.client.HttpClient
@@ -26,10 +28,13 @@ import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.json.Json
 import java.util.Base64
+import com.google.firebase.ktx.Firebase
+import io.ktor.http.HttpStatusCode
 
 object UserNetwork {
 
-    //private val userId = userId
+
+    private val userId = Firebase.auth.currentUser!!.uid
     private lateinit var userUpdateSession:DefaultClientWebSocketSession
 
     private val client = HttpClient() {
@@ -45,7 +50,7 @@ object UserNetwork {
     }
 
 
-    public suspend fun addUser(userId:String)
+    public suspend fun addUser()
     {
         val response:HttpResponse = client.post("https://www.punebusapp.live/user") {
             contentType(ContentType.Application.Json)
@@ -58,7 +63,7 @@ object UserNetwork {
 
 
 
-    public suspend fun openGetUsersTravellingOnBusConnection(userId:String): DefaultClientWebSocketSession
+    public suspend fun openGetUsersTravellingOnBusConnection(): DefaultClientWebSocketSession
     {
         return client.webSocketSession(method = HttpMethod.Get, host="www.punebusapp.live", port=8080, path = "/user/bus", block = {
             headers {
@@ -72,7 +77,7 @@ object UserNetwork {
         println("stopping connection")
         client.close()
     }
-    public suspend fun getUsersTravellingOn(userId:String, bus:String): List<User>
+    public suspend fun getUsersTravellingOn(bus:String): List<User>
     {
         val allUsers: Users = client.get("https://www.punebusapp.live/user/$bus") {
             contentType(ContentType.Application.Json)
@@ -83,7 +88,7 @@ object UserNetwork {
         return allUsers.users
     }
 
-    public suspend fun openUserUpdateConnection(userId:String)
+    public suspend fun openUserUpdateConnection()
     {
         userUpdateSession = client.webSocketSession(method = HttpMethod.Get, host="www.punebusapp.live", port=8080, path = "/user/update", block = {
             headers {
@@ -114,16 +119,22 @@ object UserNetwork {
 
     }
 
-    suspend fun getUser(userId:String):User {
+    suspend fun getUser():User? {
 
-        val user:User = client.post("https://www.punebusapp.live/user/$userId") {
+        val response = client.post("https://www.punebusapp.live/user/$userId") {
             contentType(ContentType.Application.Json)
             headers {
                 append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
             }
-        }.body()
+        }
 
-        return user
+        if(response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.Unauthorized) {
+            return null
+        }
+        else {
+            return response.body()
+        }
+
     }
 
 }
