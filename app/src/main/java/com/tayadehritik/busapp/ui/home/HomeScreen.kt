@@ -1,6 +1,7 @@
 package com.tayadehritik.busapp.ui.home
 
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -47,9 +48,15 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.data.Bus
+import com.tayadehritik.busapp.service.NavigationService
 import com.tayadehritik.busapp.ui.common.LoadingDialog
+import com.tayadehritik.busapp.ui.common.PermissionBox
 import com.tayadehritik.busapp.ui.list_items.BusItem
 import com.tayadehritik.busapp.ui.list_items.TravellingOn
 
@@ -78,6 +85,11 @@ fun HomeScreen()
         position = CameraPosition(LatLng(18.5204, 73.8567), 12f, 0f,0f)
     }
 
+
+    PermissionBox(permissions = listOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.POST_NOTIFICATIONS)) {
+
+    }
+
     Scaffold(
         topBar = {
             SearchViewCustom()
@@ -99,6 +111,30 @@ fun HomeScreen()
                 ExtendedFloatingActionButton(
                     onClick = {
                         //set user to travelling
+
+                        val coarsePermission = ContextCompat.checkSelfPermission(context,Manifest.permission.ACCESS_COARSE_LOCATION)
+                        val fineLocation = ContextCompat.checkSelfPermission(context,Manifest.permission.ACCESS_FINE_LOCATION)
+                        val notificationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+
+                        if(coarsePermission == PackageManager.PERMISSION_GRANTED &&
+                            fineLocation == PackageManager.PERMISSION_GRANTED &&
+                            notificationPermission == PackageManager.PERMISSION_GRANTED) {
+                            //have permissions
+                            val intent = Intent(context,NavigationService::class.java)
+                            try{
+                                context.startForegroundService(intent)
+                            }
+                            catch(e:Exception) {
+                                println("here")
+                            }
+
+                        }
+                        else {
+                            val toast = Toast.makeText(context, "One of the permissions is not granted", Toast.LENGTH_LONG)
+                            toast.show()
+                        }
+
+
                     },
                     icon = { Icon(painter = painterResource(id = R.drawable.directions_bus), "Start sharing location") },
                     text = { Text(text = "Are you travelling on this bus") },
