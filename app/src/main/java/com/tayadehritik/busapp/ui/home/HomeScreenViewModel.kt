@@ -20,6 +20,9 @@ import kotlinx.coroutines.launch
 
 class HomeScreenViewModel: ViewModel() {
 
+    private val _searchViewActive = MutableStateFlow(false)
+    val searchViewActive = _searchViewActive.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
@@ -64,6 +67,9 @@ class HomeScreenViewModel: ViewModel() {
         }
     }
 
+    fun updateSearchViewActive(value:Boolean) {
+        _searchViewActive.value = value
+    }
     fun updateSearchQuery(value:String) {
         _searchQuery.value = value
         _buses.value = allBuses

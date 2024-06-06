@@ -95,6 +95,7 @@ fun HomeScreen()
             SearchViewCustom()
         },
         floatingActionButton = {
+
             if(user?.is_travelling == true){
                 currentBus?.let {
                     TravellingOn(
@@ -108,6 +109,7 @@ fun HomeScreen()
                 }
             }
             else {
+                /*
                 ExtendedFloatingActionButton(
                     onClick = {
                         //set user to travelling
@@ -130,7 +132,7 @@ fun HomeScreen()
 
                         }
                         else {
-                            val toast = Toast.makeText(context, "One of the permissions is not granted", Toast.LENGTH_LONG)
+                            val toast = Toast.makeText(context, "One of the permissions required for this feature is not granted", Toast.LENGTH_LONG)
                             toast.show()
                         }
 
@@ -138,7 +140,7 @@ fun HomeScreen()
                     },
                     icon = { Icon(painter = painterResource(id = R.drawable.directions_bus), "Start sharing location") },
                     text = { Text(text = "Are you travelling on this bus") },
-                )
+                )*/
             }
 
         },
