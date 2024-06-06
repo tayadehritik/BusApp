@@ -60,8 +60,9 @@ fun PermissionBox(
             ""
         } else {
             "${rejectedPermissions.joinToString()} required for this feature to work"
+
         }
-        Toast.makeText(context, errorText, Toast.LENGTH_LONG)
+
     }
     val allRequiredPermissionsGranted =
         permissionState.revokedPermissions.none { it.permission in requiredPermissions }

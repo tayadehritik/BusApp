@@ -42,7 +42,7 @@ fun BusItem(
     ){
         Icon(
             modifier = Modifier.size(40.dp),
-            painter = painterResource(id = R.drawable.directions_bus) ,
+            painter = painterResource(id = R.drawable.directions_bus),
             contentDescription = routeShortName
         )
         Spacer(modifier = Modifier.width(16.dp))

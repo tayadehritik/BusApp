@@ -1,6 +1,8 @@
 package com.tayadehritik.busapp.data.remote
 
+import android.net.http.UrlRequest.Status
 import android.util.Log
+import com.google.firebase.auth.ktx.auth
 import com.tayadehritik.busapp.data.User
 import com.tayadehritik.busapp.data.Users
 import io.ktor.client.HttpClient
@@ -26,10 +28,13 @@ import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.json.Json
 import java.util.Base64
+import com.google.firebase.ktx.Firebase
+import io.ktor.http.HttpStatusCode
 
-class UserNetwork(userId: String) {
+object UserNetwork {
 
-    private val userId = userId
+
+    private val userId = Firebase.auth.currentUser!!.uid
     private lateinit var userUpdateSession:DefaultClientWebSocketSession
 
     private val client = HttpClient() {
@@ -54,9 +59,7 @@ class UserNetwork(userId: String) {
 
         Log.d("userresponse", response.status.toString())
 
-
     }
-
 
 
 
@@ -114,8 +117,24 @@ class UserNetwork(userId: String) {
             userUpdateSession.sendSerialized(user)
         }
 
-
     }
 
+    suspend fun getUser():User? {
+
+        val response = client.post("https://www.punebusapp.live/user/$userId") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
+            }
+        }
+
+        if(response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.Unauthorized) {
+            return null
+        }
+        else {
+            return response.body()
+        }
+
+    }
 
 }
