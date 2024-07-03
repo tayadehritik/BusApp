@@ -6,3 +6,4 @@ MAPS_API_KEY="your key"
 ```
 #### Add google-services.json of your firebase project with Phone Authentication enabled in the path app/google-services.json
 
+## This problem cannot be solved without PMPML help for the latest r

@@ -65,7 +65,7 @@ fun TravellingOn(
             )
             Column {
                 Text(
-                    text = "Travelling on",
+                    text = "Recording Route",
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

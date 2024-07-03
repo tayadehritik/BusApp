@@ -2,6 +2,7 @@ package com.tayadehritik.busapp.service
 
 import android.Manifest
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,10 +17,14 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.tayadehritik.busapp.R
+import com.tayadehritik.busapp.ui.MainActivityCompose
+import com.tayadehritik.busapp.ui.common.ACTION_START
+import com.tayadehritik.busapp.ui.common.ACTION_STOP
 import com.tayadehritik.busapp.ui.common.CHANNEL_ID
 import com.tayadehritik.busapp.ui.common.NOTIFICATION_ID
 
 class NavigationService: Service(), LocationListener {
+
 
     val serviceContext = this
 
@@ -27,11 +32,25 @@ class NavigationService: Service(), LocationListener {
 
         try {
 
+            val stopIntent = Intent(this,NavigationService::class.java)
+                .apply {
+                    action = ACTION_STOP
+                }
+            val stopPendingIntent: PendingIntent = PendingIntent.getForegroundService(this,0, stopIntent,PendingIntent.FLAG_IMMUTABLE)
+
+            val mainActivityIntent = Intent(this, MainActivityCompose::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+
+            val mainActivityPendingIntent:PendingIntent = PendingIntent.getActivity(this,1,mainActivityIntent,PendingIntent.FLAG_IMMUTABLE)
+
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.directions_bus)
-                .setContentTitle("textTitle")
-                .setContentText("textContent")
+                .setContentTitle("Recording Route")
+                .setContentText("100 UP - MaNaPa to Hinjewadi")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .addAction(R.drawable.ic_launcher_foreground,"STOP",stopPendingIntent)
+                .setContentIntent(mainActivityPendingIntent)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 notification.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
@@ -73,7 +92,16 @@ class NavigationService: Service(), LocationListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground()
+        val action = intent?.action
+
+        if(action.equals(ACTION_START)) {
+            startForeground()
+        }
+        else if(action.equals(ACTION_STOP)) {
+            stopForeground(true)
+            stopSelf()
+        }
+
         return super.onStartCommand(intent, flags, startId)
     }
     override fun onBind(intent: Intent?): IBinder? {

@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tayadehritik.busapp.data.Bus
+import com.tayadehritik.busapp.data.Route
 import com.tayadehritik.busapp.data.Shape
 import com.tayadehritik.busapp.data.User
 import com.tayadehritik.busapp.data.remote.BusNetwork
@@ -26,39 +27,34 @@ class HomeScreenViewModel: ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _fetchingBuses = MutableStateFlow(true)
-    val fetchingBuses = _fetchingBuses.asStateFlow()
+    private val _fetchingRoutes = MutableStateFlow(true)
+    val fetchingRoutes = _fetchingRoutes.asStateFlow()
 
-    private val _fetchingRoute = MutableStateFlow(false)
-    val fetchingRoute = _fetchingRoute.asStateFlow()
+    private val _recordingRoute = MutableStateFlow(false)
+    val recordingRoute = _recordingRoute.asStateFlow()
 
-    private val _buses = MutableStateFlow(listOf<Bus>())
-    val buses = _buses.asStateFlow()
+    private val _routes = MutableStateFlow(listOf<Route>())
+    val routes = _routes.asStateFlow()
 
-    private var _currentBus = MutableStateFlow<Bus?>(null)
-    val currentBus = _currentBus.asStateFlow()
-
-    private var _currentBusShape = MutableStateFlow<List<Shape>?>(null)
-    val currentBusShape = _currentBusShape.asStateFlow()
+    private var _currentRoute = MutableStateFlow<Route?>(null)
+    val currentRoute = _currentRoute.asStateFlow()
 
     private var _user = MutableStateFlow<User?>(null)
     val user = _user.asStateFlow()
 
 
     private val busNetwork:BusNetwork = BusNetwork(Firebase.auth.currentUser!!.uid)
-    private var allBuses:List<Bus> = listOf<Bus>()
+    private var allRoutes:List<Route> = listOf<Route>()
+
+
+
 
     init {
         viewModelScope.launch {
             _user.value  = UserNetwork.getUser()
             if(_user.value != null){
                 if(_user.value!!.is_travelling){
-                    updateCurrentBus(Bus(
-                        _user.value!!.route_id,
-                        _user.value!!.route_short_name,
-                        _user.value!!.shape_id,
-                        _user.value!!.trip_headsign)
-                    )
+
                 }
             }
             else {
@@ -72,32 +68,41 @@ class HomeScreenViewModel: ViewModel() {
     }
     fun updateSearchQuery(value:String) {
         _searchQuery.value = value
-        _buses.value = allBuses
+        _routes.value = allRoutes
         val allWords = value.split(" ")
-        _buses.value = _buses.value.filter {bus ->
+        _routes.value = _routes.value.filter {route ->
             allWords.any { word ->
-                bus.route_short_name.lowercase().contains(word.lowercase()) or bus.trip_headsign.lowercase().contains(word.lowercase())
+                route.route_no.lowercase().contains(word.lowercase()) or route.route.lowercase().contains(word.lowercase())
             }
         }
     }
 
-    fun fetchAllBuses() {
-        if(fetchingBuses.value) {
+    fun fetchAllRoutes() {
+        if(fetchingRoutes.value) {
             viewModelScope.launch {
-                _buses.value = busNetwork.allBuses()
-                allBuses = _buses.value
-                _fetchingBuses.value = false
+                _routes.value = busNetwork.getAllRoutes()
+                allRoutes = _routes.value
+                _fetchingRoutes.value = false
             }
         }
     }
 
-    fun updateCurrentBus(value: Bus) {
-        updateSearchQuery("${value.route_short_name} ${value.trip_headsign}")
-        _currentBus.value = value
-        _fetchingRoute.value = true
-        viewModelScope.launch {
+    fun updateRecordingRoute(value:Boolean) {
+        _recordingRoute.value = value
+    }
+
+    fun updateCurrentRoute(value: Route) {
+        updateSearchQuery("${value.route_no} ${capitalizeWord(value.route)}")
+        _currentRoute.value = value
+        /*viewModelScope.launch {
             _currentBusShape.value = busNetwork.getBusShape(value)
             _fetchingRoute.value = false
+        }*/
+    }
+
+    fun capitalizeWord(input:String):String {
+        return input.split(" ").joinToString(" ") {
+            it.lowercase().replaceFirstChar { it.uppercase() }
         }
     }
 

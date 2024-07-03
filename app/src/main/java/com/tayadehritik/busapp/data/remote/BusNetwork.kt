@@ -3,6 +3,8 @@ package com.tayadehritik.busapp.data.remote
 import com.tayadehritik.busapp.data.Bus
 import com.tayadehritik.busapp.data.BusShape
 import com.tayadehritik.busapp.data.Buses
+import com.tayadehritik.busapp.data.Route
+import com.tayadehritik.busapp.data.Routes
 import com.tayadehritik.busapp.data.Shape
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -49,5 +51,16 @@ class BusNetwork(userId:String) {
         }.body()
 
         return busShape.busShape
+    }
+
+    suspend fun getAllRoutes(): List<Route> {
+        val allRoutes: Routes = client.get("https://www.punebusapp.live/routes") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
+            }
+        }.body()
+
+        return allRoutes.routes
     }
 }
