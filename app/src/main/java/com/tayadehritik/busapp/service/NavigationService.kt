@@ -32,12 +32,6 @@ class NavigationService: Service(), LocationListener {
 
         try {
 
-            val stopIntent = Intent(this,NavigationService::class.java)
-                .apply {
-                    action = ACTION_STOP
-                }
-            val stopPendingIntent: PendingIntent = PendingIntent.getForegroundService(this,0, stopIntent,PendingIntent.FLAG_IMMUTABLE)
-
             val mainActivityIntent = Intent(this, MainActivityCompose::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
@@ -49,7 +43,6 @@ class NavigationService: Service(), LocationListener {
                 .setContentTitle("Recording Route")
                 .setContentText("100 UP - MaNaPa to Hinjewadi")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .addAction(R.drawable.ic_launcher_foreground,"STOP",stopPendingIntent)
                 .setContentIntent(mainActivityPendingIntent)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
