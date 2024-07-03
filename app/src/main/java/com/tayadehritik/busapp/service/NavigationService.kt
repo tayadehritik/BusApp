@@ -1,21 +1,24 @@
 package com.tayadehritik.busapp.service
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.location.Location
 import android.location.LocationListener
 import android.os.Build
 import android.os.IBinder
-import androidx.core.app.ActivityCompat
+import android.os.Looper
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
-import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.ui.MainActivityCompose
 import com.tayadehritik.busapp.ui.common.ACTION_START
@@ -28,6 +31,33 @@ class NavigationService: Service(), LocationListener {
 
     val serviceContext = this
 
+    private lateinit var fusedLocationClient:FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var locationRequest:LocationRequest
+
+    @SuppressLint("MissingPermission")
+    private fun startLocationUpdates() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,10000).build()
+        locationCallback = object: LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult ?: return
+                for(location in locationResult.locations) {
+                    println(location.toString())
+                }
+            }
+        }
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
+    }
+
+    private fun stopLocationUpdates() {
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
     private fun startForeground() {
 
         try {
@@ -89,8 +119,10 @@ class NavigationService: Service(), LocationListener {
 
         if(action.equals(ACTION_START)) {
             startForeground()
+            startLocationUpdates()
         }
         else if(action.equals(ACTION_STOP)) {
+            stopLocationUpdates()
             stopForeground(true)
             stopSelf()
         }
