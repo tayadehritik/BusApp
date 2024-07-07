@@ -31,33 +31,7 @@ class NavigationService: Service(), LocationListener {
 
     val serviceContext = this
 
-    private lateinit var fusedLocationClient:FusedLocationProviderClient
-    private lateinit var locationCallback: LocationCallback
-    private lateinit var locationRequest:LocationRequest
 
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,10000).build()
-        locationCallback = object: LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult ?: return
-                for(location in locationResult.locations) {
-                    println(location.toString())
-                }
-            }
-        }
-
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
-    }
-
-    private fun stopLocationUpdates() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
-    }
     private fun startForeground() {
 
         try {
@@ -114,15 +88,14 @@ class NavigationService: Service(), LocationListener {
         }
     }
 
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
 
         if(action.equals(ACTION_START)) {
             startForeground()
-            startLocationUpdates()
         }
         else if(action.equals(ACTION_STOP)) {
-            stopLocationUpdates()
             stopForeground(true)
             stopSelf()
         }

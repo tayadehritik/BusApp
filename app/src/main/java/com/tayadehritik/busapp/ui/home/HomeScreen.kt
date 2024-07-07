@@ -49,14 +49,24 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Looper
 import android.widget.Toast
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.toLowerCase
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.data.Bus
 import com.tayadehritik.busapp.service.NavigationService
+import com.tayadehritik.busapp.ui.MainActivityCompose
 import com.tayadehritik.busapp.ui.common.ACTION_START
 import com.tayadehritik.busapp.ui.common.ACTION_STOP
 import com.tayadehritik.busapp.ui.common.LoadingDialog
@@ -64,13 +74,44 @@ import com.tayadehritik.busapp.ui.common.PermissionBox
 import com.tayadehritik.busapp.ui.list_items.BusItem
 import com.tayadehritik.busapp.ui.list_items.TravellingOn
 
+
 private val viewModel:HomeScreenViewModel = HomeScreenViewModel()
+private lateinit var fusedLocationClient: FusedLocationProviderClient
+private lateinit var locationCallback: LocationCallback
+private lateinit var locationRequest: LocationRequest
+private lateinit var context:Context
+@SuppressLint("MissingPermission")
+private fun startLocationUpdates() {
+    viewModel.clearCoords()
+    fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,10000).build()
+    locationCallback = object: LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationResult ?: return
+            for(location in locationResult.locations) {
+
+                viewModel.updateCoords(LatLng(location.latitude,location.longitude))
+            }
+        }
+    }
+
+    fusedLocationClient.requestLocationUpdates(
+        locationRequest,
+        locationCallback,
+        Looper.getMainLooper()
+    )
+}
+
+private fun stopLocationUpdates() {
+
+    fusedLocationClient.removeLocationUpdates(locationCallback)
+}
 
 @Preview
 @Composable
 fun HomeScreen()
 {
-    val context = LocalContext.current
+    context = LocalContext.current
 
     val mapStyleOptions =
         if(isSystemInDarkTheme())
@@ -84,6 +125,7 @@ fun HomeScreen()
     val currentRoute by viewModel.currentRoute.collectAsState()
     val user by viewModel.user.collectAsState()
     val recordingRoute by viewModel.recordingRoute.collectAsState()
+    val coords by viewModel.coords.collectAsState()
 
 
     val cameraPositionState: CameraPositionState = rememberCameraPositionState {
@@ -138,6 +180,7 @@ fun HomeScreen()
                                     notificationPermission == PackageManager.PERMISSION_GRANTED
                                 ) {
                                     //have permissions
+                                    startLocationUpdates()
                                     val intent = Intent(context, NavigationService::class.java)
                                         .apply {
                                             action = ACTION_START
@@ -192,6 +235,7 @@ fun HomeScreen()
                                     notificationPermission == PackageManager.PERMISSION_GRANTED
                                 ) {
                                     //have permissions
+                                    stopLocationUpdates()
                                     val intent = Intent(context, NavigationService::class.java)
                                         .apply {
                                             action = ACTION_STOP
@@ -244,12 +288,12 @@ fun HomeScreen()
                     compassEnabled = false,
                     zoomControlsEnabled = false)
             ) {
-                /*if(currentBusShape != null)
+                if(recordingRoute and coords.isNotEmpty())
                 {
-                    Polyline(points = currentBusShape!!.map { LatLng(it.shape_pt_lat.toDouble(), it.shape_pt_lon.toDouble()) })
-                    val middleShape = currentBusShape!![currentBusShape!!.size/2]
-                    cameraPositionState.position = CameraPosition.fromLatLngZoom(LatLng(middleShape.shape_pt_lat.toDouble(),middleShape.shape_pt_lon.toDouble()),12f)
-                }*/
+
+                    Polyline(points = coords )
+                    cameraPositionState.position = CameraPosition.fromLatLngZoom(coords.last(),12f)
+                }
             }
 
         }

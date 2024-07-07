@@ -1,11 +1,22 @@
 package com.tayadehritik.busapp.ui.home
 
 
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.os.Looper
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.toLowerCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -15,7 +26,9 @@ import com.tayadehritik.busapp.data.Shape
 import com.tayadehritik.busapp.data.User
 import com.tayadehritik.busapp.data.remote.BusNetwork
 import com.tayadehritik.busapp.data.remote.UserNetwork
+import com.tayadehritik.busapp.ui.MainActivityCompose
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -42,10 +55,13 @@ class HomeScreenViewModel: ViewModel() {
     private var _user = MutableStateFlow<User?>(null)
     val user = _user.asStateFlow()
 
+    private val mutableCoords = mutableListOf<LatLng>()
+    private val _coords = MutableStateFlow<List<LatLng>>(listOf())
+    val coords = _coords.asStateFlow()
+
 
     private val busNetwork:BusNetwork = BusNetwork(Firebase.auth.currentUser!!.uid)
     private var allRoutes:List<Route> = listOf<Route>()
-
 
 
 
@@ -105,5 +121,17 @@ class HomeScreenViewModel: ViewModel() {
             it.lowercase().replaceFirstChar { it.uppercase() }
         }
     }
+
+    fun updateCoords(value:LatLng) {
+        mutableCoords.add(value)
+        _coords.value = mutableCoords.toList()
+    }
+
+    fun clearCoords() {
+        mutableCoords.clear()
+        _coords.value = mutableCoords.toList()
+    }
+
+
 
 }
