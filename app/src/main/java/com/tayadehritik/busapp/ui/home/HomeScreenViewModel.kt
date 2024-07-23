@@ -21,18 +21,34 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tayadehritik.busapp.data.Bus
+import com.tayadehritik.busapp.data.OptimizedRoute
 import com.tayadehritik.busapp.data.Route
 import com.tayadehritik.busapp.data.Shape
 import com.tayadehritik.busapp.data.User
 import com.tayadehritik.busapp.data.remote.BusNetwork
+import com.tayadehritik.busapp.data.remote.GoogleRoadsAPI
 import com.tayadehritik.busapp.data.remote.UserNetwork
 import com.tayadehritik.busapp.ui.MainActivityCompose
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
-class HomeScreenViewModel: ViewModel() {
+@HiltViewModel
+class HomeScreenViewModel @Inject constructor(
+    private val googleRoadsAPI: GoogleRoadsAPI
+) : ViewModel() {
 
     private val _searchViewActive = MutableStateFlow(false)
     val searchViewActive = _searchViewActive.asStateFlow()
@@ -52,6 +68,9 @@ class HomeScreenViewModel: ViewModel() {
     private var _currentRoute = MutableStateFlow<Route?>(null)
     val currentRoute = _currentRoute.asStateFlow()
 
+    private var _currentMarker = MutableStateFlow<Int?>(null)
+    val currentMarker = _currentMarker.asStateFlow()
+
     private var _user = MutableStateFlow<User?>(null)
     val user = _user.asStateFlow()
 
@@ -63,7 +82,14 @@ class HomeScreenViewModel: ViewModel() {
     private val busNetwork:BusNetwork = BusNetwork(Firebase.auth.currentUser!!.uid)
     private var allRoutes:List<Route> = listOf<Route>()
 
-
+    val client = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json(Json {
+                prettyPrint = true
+                isLenient = true
+            })
+        }
+    }
 
     init {
         viewModelScope.launch {
@@ -81,6 +107,15 @@ class HomeScreenViewModel: ViewModel() {
 
     fun updateSearchViewActive(value:Boolean) {
         _searchViewActive.value = value
+    }
+
+    fun updateCurrentMarker(value:Int) {
+        _currentMarker.value = value
+    }
+
+    fun deleteCurrentMarker() {
+        currentMarker.value?.let { mutableCoords.removeAt(it) }
+        _coords.value = mutableCoords.toList()
     }
     fun updateSearchQuery(value:String) {
         _searchQuery.value = value
@@ -132,6 +167,34 @@ class HomeScreenViewModel: ViewModel() {
         _coords.value = mutableCoords.toList()
     }
 
+   fun optimizeRoute() {
+
+        viewModelScope.launch {
+            val path = _coords.value.map {
+                "${it.latitude},${it.longitude}"
+            }.joinToString(separator = "|")
+            println(path)
+
+            /*val response: HttpResponse = client.get("https://roads.googleapis.com/v1/snapToRoads") {
+                url {
+                    parameters.append("path",path)
+                    parameters.append("interpolate", "false")
+                    parameters.append("key","AIzaSyA1KAVwH_VgOIpg-zSKYoS-0hs-B4WITEU")
+                }
+            }
+
+            println(response.body() as String)*/
+            val optimizedRoute: OptimizedRoute? = googleRoadsAPI.getOptimizedRoute(path,"false","AIzaSyA1KAVwH_VgOIpg-zSKYoS-0hs-B4WITEU").body()
+
+            if (optimizedRoute != null) {
+                println(optimizedRoute)
+                _coords.value = optimizedRoute.snappedPoints.map {
+                    LatLng(it.location.latitude,it.location.longitude)
+                }
+            }
+        }
+
+    }
 
 
 }

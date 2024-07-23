@@ -37,12 +37,14 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable.VersionField
 import com.tayadehritik.busapp.ui.common.LoadingDialog
 
-private val viewModel: VerificationScreenViewModel = VerificationScreenViewModel()
+
 
 @Composable
 fun VerificationScreen(
     verificationId:String?,
-    onNavigateToHomeScreen:() -> Unit)
+    onNavigateToHomeScreen:() -> Unit,
+    viewModel: VerificationScreenViewModel
+)
 {
     val verificationUIState by viewModel.verificationUIState.collectAsState()
 

@@ -5,15 +5,18 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.PhoneAuthProvider
 import com.tayadehritik.busapp.data.VerificationUIState
 import com.tayadehritik.busapp.data.remote.PhoneAuthentication
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
-class VerificationScreenViewModel(
+@HiltViewModel
+class VerificationScreenViewModel @Inject constructor(
+    private val phoneAuthentication: PhoneAuthentication
 ): ViewModel() {
 
     private val _verificationUIState = MutableStateFlow(VerificationUIState())
     public var verificationUIState = _verificationUIState.asStateFlow()
-    private val phoneAuthentication = PhoneAuthentication()
 
 
     fun updateOTP(OTP:String)

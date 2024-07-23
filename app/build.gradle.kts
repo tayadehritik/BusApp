@@ -4,6 +4,9 @@ plugins {
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
     id("com.google.gms.google-services")
     id("kotlinx-serialization")
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
+
 
 }
 
@@ -119,8 +122,14 @@ dependencies {
     // Android Maps Compose composables for the Maps SDK for Android
     implementation("com.google.maps.android:maps-compose:4.3.3")
 
+    //dagger hilt
+    implementation("com.google.dagger:hilt-android:2.48")
+    kapt("com.google.dagger:hilt-android-compiler:2.48")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
-
+    //retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
 
     implementation("com.google.android.material:material:1.11.0")
@@ -142,4 +151,8 @@ dependencies {
 
 
 
+}
+
+kapt {
+    correctErrorTypes = true
 }

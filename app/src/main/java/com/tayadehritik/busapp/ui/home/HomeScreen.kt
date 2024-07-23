@@ -54,15 +54,35 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Looper
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.LargeFloatingActionButton
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.toLowerCase
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.model.JointType
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerInfoWindow
+import com.google.maps.android.compose.MarkerState
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.data.Bus
 import com.tayadehritik.busapp.service.NavigationService
@@ -75,13 +95,15 @@ import com.tayadehritik.busapp.ui.list_items.BusItem
 import com.tayadehritik.busapp.ui.list_items.TravellingOn
 
 
-private val viewModel:HomeScreenViewModel = HomeScreenViewModel()
+
 private lateinit var fusedLocationClient: FusedLocationProviderClient
 private lateinit var locationCallback: LocationCallback
 private lateinit var locationRequest: LocationRequest
 private lateinit var context:Context
 @SuppressLint("MissingPermission")
-private fun startLocationUpdates() {
+private fun startLocationUpdates(
+    viewModel: HomeScreenViewModel
+) {
     viewModel.clearCoords()
     fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,10000).build()
@@ -89,7 +111,6 @@ private fun startLocationUpdates() {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult ?: return
             for(location in locationResult.locations) {
-
                 viewModel.updateCoords(LatLng(location.latitude,location.longitude))
             }
         }
@@ -107,9 +128,11 @@ private fun stopLocationUpdates() {
     fusedLocationClient.removeLocationUpdates(locationCallback)
 }
 
-@Preview
+
 @Composable
-fun HomeScreen()
+fun HomeScreen(
+    viewModel: HomeScreenViewModel
+)
 {
     context = LocalContext.current
 
@@ -127,6 +150,7 @@ fun HomeScreen()
     val recordingRoute by viewModel.recordingRoute.collectAsState()
     val coords by viewModel.coords.collectAsState()
 
+    val currentMarker by viewModel.currentMarker.collectAsState()
 
     val cameraPositionState: CameraPositionState = rememberCameraPositionState {
         position = CameraPosition(LatLng(18.5204, 73.8567), 12f, 0f,0f)
@@ -139,139 +163,162 @@ fun HomeScreen()
 
     Scaffold(
         topBar = {
-            SearchViewCustom()
+            //SearchViewCustom()
         },
+
         floatingActionButton = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (!recordingRoute) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            //set user to travelling
 
-            if(user?.is_travelling == true){
-                /*currentBus?.let {
-                    TravellingOn(
-                        routeShortName = it.route_short_name,
-                        tripHeadSign = it.trip_headsign,
-                        onCancel = {
-                            //set user is travelling to false
+                            val coarsePermission = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                            val fineLocation = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                            )
+                            val notificationPermission = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
 
-                        }
+                            if (coarsePermission == PackageManager.PERMISSION_GRANTED &&
+                                fineLocation == PackageManager.PERMISSION_GRANTED &&
+                                notificationPermission == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                //have permissions
+                                startLocationUpdates(viewModel)
+                                val intent = Intent(context, NavigationService::class.java)
+                                    .apply {
+                                        action = ACTION_START
+                                    }
+                                try {
+                                    context.startForegroundService(intent)
+                                    viewModel.updateRecordingRoute(true)
+                                } catch (e: Exception) {
+                                    println("here")
+                                }
+
+                            } else {
+                                val toast = Toast.makeText(
+                                    context,
+                                    "One of the permissions required for this feature is not granted",
+                                    Toast.LENGTH_LONG
+                                )
+                                toast.show()
+                            }
+
+
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.directions_bus),
+                                "Start recording this route"
+                            )
+                        },
+                        text = { Text(text = "Start recording this route") },
                     )
-                }*/
-            }
-            else {
-                if (currentRoute != null) {
-                    if(!recordingRoute) {
-                        ExtendedFloatingActionButton(
-                            onClick = {
-                                //set user to travelling
+                } else {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            //set user to travelling
 
-                                val coarsePermission = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                                val fineLocation = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.ACCESS_FINE_LOCATION
-                                )
-                                val notificationPermission = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS
-                                )
+                            val coarsePermission = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                            val fineLocation = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_FINE_LOCATION
+                            )
+                            val notificationPermission = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
 
-                                if (coarsePermission == PackageManager.PERMISSION_GRANTED &&
-                                    fineLocation == PackageManager.PERMISSION_GRANTED &&
-                                    notificationPermission == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    //have permissions
-                                    startLocationUpdates()
-                                    val intent = Intent(context, NavigationService::class.java)
-                                        .apply {
-                                            action = ACTION_START
-                                        }
-                                    try {
-                                        context.startForegroundService(intent)
-                                        viewModel.updateRecordingRoute(true)
-                                    } catch (e: Exception) {
-                                        println("here")
+                            if (coarsePermission == PackageManager.PERMISSION_GRANTED &&
+                                fineLocation == PackageManager.PERMISSION_GRANTED &&
+                                notificationPermission == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                //have permissions
+                                stopLocationUpdates()
+                                val intent = Intent(context, NavigationService::class.java)
+                                    .apply {
+                                        action = ACTION_STOP
                                     }
-
-                                } else {
-                                    val toast = Toast.makeText(
-                                        context,
-                                        "One of the permissions required for this feature is not granted",
-                                        Toast.LENGTH_LONG
-                                    )
-                                    toast.show()
+                                try {
+                                    context.startForegroundService(intent)
+                                    viewModel.updateRecordingRoute(false)
+                                } catch (e: Exception) {
+                                    println("here")
                                 }
 
-
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.directions_bus),
-                                    "Start recording this route"
-                                )
-                            },
-                            text = { Text(text = "Start recording this route") },
-                        )
-                    }
-                    else{
-                        ExtendedFloatingActionButton(
-                            onClick = {
-                                //set user to travelling
-
-                                val coarsePermission = ContextCompat.checkSelfPermission(
+                            } else {
+                                val toast = Toast.makeText(
                                     context,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                    "One of the permissions required for this feature is not granted",
+                                    Toast.LENGTH_LONG
                                 )
-                                val fineLocation = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.ACCESS_FINE_LOCATION
-                                )
-                                val notificationPermission = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS
-                                )
-
-                                if (coarsePermission == PackageManager.PERMISSION_GRANTED &&
-                                    fineLocation == PackageManager.PERMISSION_GRANTED &&
-                                    notificationPermission == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    //have permissions
-                                    stopLocationUpdates()
-                                    val intent = Intent(context, NavigationService::class.java)
-                                        .apply {
-                                            action = ACTION_STOP
-                                        }
-                                    try {
-                                        context.startForegroundService(intent)
-                                        viewModel.updateRecordingRoute(false)
-                                    } catch (e: Exception) {
-                                        println("here")
-                                    }
-
-                                } else {
-                                    val toast = Toast.makeText(
-                                        context,
-                                        "One of the permissions required for this feature is not granted",
-                                        Toast.LENGTH_LONG
-                                    )
-                                    toast.show()
-                                }
+                                toast.show()
+                            }
 
 
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.directions_bus),
-                                    "Start recording this route"
-                                )
-                            },
-                            text = { Text(text = "Stop recording this route") },
-                        )
-                    }
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.directions_bus),
+                                "Stop recording this route"
+                            )
+                        },
+                        text = { Text(text = "Stop recording this route") },
+                    )
                 }
+
+                /*FloatingActionButton(
+                    onClick = { viewModel.deleteCurrentMarker() }
+                ) {
+                    Text(text = "$currentMarker")
+                }*/
+
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        viewModel.optimizeRoute()
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.directions_bus),
+                            "Optimize route"
+                        )
+                    },
+                    text = { Text(text = "Optimize route") },
+                )
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        viewModel.clearCoords()
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.directions_bus),
+                            "Clear Coords"
+                        )
+                    },
+                    text = { Text(text = "Clear Coords") },
+                )
+
+
+
             }
+
+
 
         },
-        floatingActionButtonPosition = FabPosition.Center
+        floatingActionButtonPosition = FabPosition.Start
     ) { contentPadding  ->
 
         println(contentPadding)
@@ -288,11 +335,20 @@ fun HomeScreen()
                     compassEnabled = false,
                     zoomControlsEnabled = false)
             ) {
-                if(recordingRoute and coords.isNotEmpty())
+                if(coords.isNotEmpty())
                 {
+                    Polyline(points = coords)
+                    for((index, coord) in coords.withIndex()) {
+                        Marker(
+                            state = MarkerState(position = coord),
+                            title = index.toString(),
+                            onClick = {
+                                viewModel.updateCurrentMarker(index)
+                                true
+                            }
+                        )
+                    }
 
-                    Polyline(points = coords )
-                    cameraPositionState.position = CameraPosition.fromLatLngZoom(coords.last(),12f)
                 }
             }
 
@@ -304,7 +360,9 @@ fun HomeScreen()
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun SearchViewCustom() {
+private fun SearchViewCustom(
+    viewModel: HomeScreenViewModel
+) {
     val context = LocalContext.current
     var searchViewActive by remember { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
