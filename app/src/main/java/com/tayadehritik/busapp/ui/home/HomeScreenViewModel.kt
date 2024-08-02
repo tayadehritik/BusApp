@@ -3,7 +3,11 @@ package com.tayadehritik.busapp.ui.home
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Application
+import android.content.Context
 import android.os.Looper
+import android.util.Xml
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.toLowerCase
 import androidx.lifecycle.ViewModel
@@ -21,10 +25,13 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tayadehritik.busapp.data.Bus
+import com.tayadehritik.busapp.data.KMLHandler
 import com.tayadehritik.busapp.data.OptimizedRoute
 import com.tayadehritik.busapp.data.Route
 import com.tayadehritik.busapp.data.Shape
 import com.tayadehritik.busapp.data.User
+import com.tayadehritik.busapp.data.local.AppDatabase
+import com.tayadehritik.busapp.data.locationstuff.LocationClient
 import com.tayadehritik.busapp.data.remote.BusNetwork
 import com.tayadehritik.busapp.data.remote.GoogleRoadsAPI
 import com.tayadehritik.busapp.data.remote.UserNetwork
@@ -42,13 +49,29 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.json.Json
+import java.io.File
+import java.util.Properties
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeScreenViewModel @Inject constructor(
-    private val googleRoadsAPI: GoogleRoadsAPI
+    private val googleRoadsAPI: GoogleRoadsAPI,
+    private val locationClient: LocationClient,
+    private val appDatabase: AppDatabase
 ) : ViewModel() {
+
+    val xmlSerializer = Xml.newSerializer()
+    lateinit var routeWatcherScope:CoroutineScope
 
     private val _searchViewActive = MutableStateFlow(false)
     val searchViewActive = _searchViewActive.asStateFlow()
@@ -74,22 +97,12 @@ class HomeScreenViewModel @Inject constructor(
     private var _user = MutableStateFlow<User?>(null)
     val user = _user.asStateFlow()
 
-    private val mutableCoords = mutableListOf<LatLng>()
     private val _coords = MutableStateFlow<List<LatLng>>(listOf())
     val coords = _coords.asStateFlow()
-
 
     private val busNetwork:BusNetwork = BusNetwork(Firebase.auth.currentUser!!.uid)
     private var allRoutes:List<Route> = listOf<Route>()
 
-    val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-            })
-        }
-    }
 
     init {
         viewModelScope.launch {
@@ -113,10 +126,7 @@ class HomeScreenViewModel @Inject constructor(
         _currentMarker.value = value
     }
 
-    fun deleteCurrentMarker() {
-        currentMarker.value?.let { mutableCoords.removeAt(it) }
-        _coords.value = mutableCoords.toList()
-    }
+
     fun updateSearchQuery(value:String) {
         _searchQuery.value = value
         _routes.value = allRoutes
@@ -157,42 +167,61 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun updateCoords(value:LatLng) {
-        mutableCoords.add(value)
-        _coords.value = mutableCoords.toList()
+    fun startLocationUpdates() {
+        routeWatcherScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        appDatabase.LatLngMarkerDAO().getCollectedRoute()
+            .onStart {
+
+            }
+            .onEach {
+                _coords.value = it.map {
+                    LatLng(it.lat,it.lng)
+                }
+            }
+            .launchIn(routeWatcherScope)
+    }
+
+    fun stopRecordingRoute() {
+        routeWatcherScope.cancel()
     }
 
     fun clearCoords() {
-        mutableCoords.clear()
-        _coords.value = mutableCoords.toList()
+        CoroutineScope(Dispatchers.IO).launch {
+            appDatabase.LatLngMarkerDAO().clearRoute()
+            _coords.value = appDatabase.LatLngMarkerDAO().getCollectedRoute().first().map { LatLng(it.lat,it.lng) }
+        }
+    }
+   fun optimizeRoute() {
+        println(_coords.value)
+        viewModelScope.launch {
+
+            val mapsAPIKey = UserNetwork.getMapsAPIKey()
+            val chunkedCoords = _coords.value.chunked(100)
+            val completelist = mutableListOf<List<LatLng>>()
+            for (chunk in chunkedCoords)
+            {
+                val path = chunk.map {
+                    "${it.latitude},${it.longitude}"
+                }.joinToString(separator = "|")
+
+
+                val optimizedRoute: OptimizedRoute? = mapsAPIKey?.let { googleRoadsAPI.getOptimizedRoute(path,"false", it).body() }
+                if (optimizedRoute != null) {
+                    val optimizedChunk = optimizedRoute.snappedPoints.map {
+                        LatLng(it.location.latitude,it.location.longitude)
+                    }
+                    completelist.add(optimizedChunk)
+                }
+
+            }
+
+            _coords.value = completelist.flatten()
+
+        }
     }
 
-   fun optimizeRoute() {
 
-        viewModelScope.launch {
-            val path = _coords.value.map {
-                "${it.latitude},${it.longitude}"
-            }.joinToString(separator = "|")
-            println(path)
-
-            /*val response: HttpResponse = client.get("https://roads.googleapis.com/v1/snapToRoads") {
-                url {
-                    parameters.append("path",path)
-                    parameters.append("interpolate", "false")
-                    parameters.append("key","AIzaSyA1KAVwH_VgOIpg-zSKYoS-0hs-B4WITEU")
-                }
-            }
-
-            println(response.body() as String)*/
-            val optimizedRoute: OptimizedRoute? = googleRoadsAPI.getOptimizedRoute(path,"false","AIzaSyA1KAVwH_VgOIpg-zSKYoS-0hs-B4WITEU").body()
-
-            if (optimizedRoute != null) {
-                println(optimizedRoute)
-                _coords.value = optimizedRoute.snappedPoints.map {
-                    LatLng(it.location.latitude,it.location.longitude)
-                }
-            }
-        }
+    fun exportKMLFile() {
 
     }
 

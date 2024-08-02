@@ -96,37 +96,8 @@ import com.tayadehritik.busapp.ui.list_items.TravellingOn
 
 
 
-private lateinit var fusedLocationClient: FusedLocationProviderClient
-private lateinit var locationCallback: LocationCallback
-private lateinit var locationRequest: LocationRequest
-private lateinit var context:Context
-@SuppressLint("MissingPermission")
-private fun startLocationUpdates(
-    viewModel: HomeScreenViewModel
-) {
-    viewModel.clearCoords()
-    fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,10000).build()
-    locationCallback = object: LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            locationResult ?: return
-            for(location in locationResult.locations) {
-                viewModel.updateCoords(LatLng(location.latitude,location.longitude))
-            }
-        }
-    }
 
-    fusedLocationClient.requestLocationUpdates(
-        locationRequest,
-        locationCallback,
-        Looper.getMainLooper()
-    )
-}
 
-private fun stopLocationUpdates() {
-
-    fusedLocationClient.removeLocationUpdates(locationCallback)
-}
 
 
 @Composable
@@ -134,7 +105,7 @@ fun HomeScreen(
     viewModel: HomeScreenViewModel
 )
 {
-    context = LocalContext.current
+    val context = LocalContext.current
 
     val mapStyleOptions =
         if(isSystemInDarkTheme())
@@ -193,13 +164,14 @@ fun HomeScreen(
                                 notificationPermission == PackageManager.PERMISSION_GRANTED
                             ) {
                                 //have permissions
-                                startLocationUpdates(viewModel)
+
                                 val intent = Intent(context, NavigationService::class.java)
                                     .apply {
                                         action = ACTION_START
                                     }
                                 try {
                                     context.startForegroundService(intent)
+                                    viewModel.startLocationUpdates()
                                     viewModel.updateRecordingRoute(true)
                                 } catch (e: Exception) {
                                     println("here")
@@ -247,13 +219,14 @@ fun HomeScreen(
                                 notificationPermission == PackageManager.PERMISSION_GRANTED
                             ) {
                                 //have permissions
-                                stopLocationUpdates()
+
                                 val intent = Intent(context, NavigationService::class.java)
                                     .apply {
                                         action = ACTION_STOP
                                     }
                                 try {
                                     context.startForegroundService(intent)
+                                    viewModel.stopRecordingRoute()
                                     viewModel.updateRecordingRoute(false)
                                 } catch (e: Exception) {
                                     println("here")
@@ -310,8 +283,18 @@ fun HomeScreen(
                     },
                     text = { Text(text = "Clear Coords") },
                 )
-
-
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        viewModel.clearCoords()
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.directions_bus),
+                            "Export KML File"
+                        )
+                    },
+                    text = { Text(text = "Export KML File") },
+                )
 
             }
 

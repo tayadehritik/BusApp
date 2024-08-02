@@ -7,7 +7,6 @@ plugins {
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
 
-
 }
 
 android {
@@ -20,11 +19,12 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+
+
     }
 
     buildTypes {
@@ -44,6 +44,7 @@ android {
         jvmTarget = "1.8"
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
         compose = true
 
@@ -58,7 +59,10 @@ android {
         }
     }
 
+
+
 }
+
 
 dependencies {
 
@@ -146,9 +150,22 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
 
+    val room_version = "2.6.1"
+
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
+
+    // To use Kotlin annotation processing tool (kapt)
+    kapt("androidx.room:room-compiler:$room_version")
+    // To use Kotlin Symbol Processing (KSP)
 
 
+    // optional - Kotlin Extensions and Coroutines support for Room
+    implementation("androidx.room:room-ktx:$room_version")
 
+
+    // optional - Paging 3 Integration
+    implementation("androidx.room:room-paging:$room_version")
 
 
 }
@@ -156,3 +173,4 @@ dependencies {
 kapt {
     correctErrorTypes = true
 }
+

@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import com.tayadehritik.busapp.ui.theme.BusAppTheme
 
 import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.tayadehritik.busapp.ui.navigation.NavGraph
 import dagger.hilt.android.AndroidEntryPoint
@@ -17,13 +18,13 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivityCompose : ComponentActivity() {
 
 
-    private val mainViewModel:MainViewModel = MainViewModel()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         println("onCreate()")
         enableEdgeToEdge()
         setContent {
             BusAppTheme {
+                    val mainViewModel:MainViewModel = hiltViewModel<MainViewModel>()
                     val startDestination by mainViewModel.startDestination.collectAsState()
                     val navController = rememberNavController()
                     NavGraph(navController = navController, startDestination = startDestination)

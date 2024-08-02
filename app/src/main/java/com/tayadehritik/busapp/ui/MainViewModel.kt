@@ -7,6 +7,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+
 class MainViewModel: ViewModel() {
 
     private var auth: FirebaseAuth
