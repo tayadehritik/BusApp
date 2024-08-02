@@ -54,8 +54,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.json.Json
@@ -105,6 +108,20 @@ class HomeScreenViewModel @Inject constructor(
 
 
     init {
+        routeWatcherScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        appDatabase.LatLngMarkerDAO().getCollectedRoute()
+            .onStart {
+            }
+            .onEach {
+                _coords.value = it.map {
+                    LatLng(it.lat,it.lng)
+                }
+                _recordingRoute.value = it.isNotEmpty()
+
+            }
+            .launchIn(routeWatcherScope)
+
+
         viewModelScope.launch {
             _user.value  = UserNetwork.getUser()
             if(_user.value != null){
@@ -155,10 +172,7 @@ class HomeScreenViewModel @Inject constructor(
     fun updateCurrentRoute(value: Route) {
         updateSearchQuery("${value.route_no} ${capitalizeWord(value.route)}")
         _currentRoute.value = value
-        /*viewModelScope.launch {
-            _currentBusShape.value = busNetwork.getBusShape(value)
-            _fetchingRoute.value = false
-        }*/
+
     }
 
     fun capitalizeWord(input:String):String {
@@ -192,7 +206,6 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
    fun optimizeRoute() {
-        println(_coords.value)
         viewModelScope.launch {
 
             val mapsAPIKey = UserNetwork.getMapsAPIKey()
@@ -214,15 +227,19 @@ class HomeScreenViewModel @Inject constructor(
                 }
 
             }
-
             _coords.value = completelist.flatten()
-
         }
     }
 
 
     fun exportKMLFile() {
 
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        routeWatcherScope.cancel()
+        println("Cleared")
     }
 
 
