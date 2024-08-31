@@ -1,6 +1,5 @@
 package com.tayadehritik.busapp.service
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,19 +7,10 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.location.Location
-import android.location.LocationListener
 import android.os.Build
 import android.os.IBinder
-import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.data.local.AppDatabase
 import com.tayadehritik.busapp.data.local.LatLngMarker
@@ -36,7 +26,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -76,7 +65,7 @@ class NavigationService: Service(){
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             var position = 0
-            serviceScope.launch { appDatabase.LatLngMarkerDAO().clearRoute() }
+            serviceScope.launch { appDatabase.routeCollectionDAO().clearRoute() }
 
             locationClient.getLocationUpdates(10000L)
                 .catch { e -> e.printStackTrace() }
@@ -87,7 +76,7 @@ class NavigationService: Service(){
                         "Location: ($lat, $long)"
                     )
                     notificationManager.notify(NOTIFICATION_ID,updatedNotification.build())
-                    appDatabase.LatLngMarkerDAO().insertMarker(LatLngMarker(position,lat = location.latitude,lng = location.longitude))
+                    appDatabase.routeCollectionDAO().insertMarker(LatLngMarker(position,lat = location.latitude,lng = location.longitude))
                     position++
                 }
                 .launchIn(serviceScope)

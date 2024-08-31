@@ -57,7 +57,7 @@ class LocationClient(
             )
 
             awaitClose {
-                appDatabase.LatLngMarkerDAO().clearRoute()
+                appDatabase.routeCollectionDAO().clearRoute()
                 client.removeLocationUpdates(locationCallback)
             }
         }

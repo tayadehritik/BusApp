@@ -8,14 +8,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,373 +47,61 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Looper
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.LargeFloatingActionButton
-import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.capitalize
-import androidx.compose.ui.text.toLowerCase
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.maps.model.JointType
 import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerInfoWindow
 import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberMarkerState
 import com.tayadehritik.busapp.R
-import com.tayadehritik.busapp.data.Bus
+import com.tayadehritik.busapp.data.local.LatLngMarker
 import com.tayadehritik.busapp.service.NavigationService
-import com.tayadehritik.busapp.ui.MainActivityCompose
 import com.tayadehritik.busapp.ui.common.ACTION_START
 import com.tayadehritik.busapp.ui.common.ACTION_STOP
 import com.tayadehritik.busapp.ui.common.LoadingDialog
 import com.tayadehritik.busapp.ui.common.PermissionBox
 import com.tayadehritik.busapp.ui.list_items.BusItem
-import com.tayadehritik.busapp.ui.list_items.TravellingOn
-
-
-
-
-
 
 
 @Composable
-fun HomeScreen(
-    viewModel: HomeScreenViewModel
-)
+fun HomeScreen(viewModel: HomeScreenViewModel)
 {
-    val context = LocalContext.current
+    val mapState by viewModel.mapState.collectAsState()
+    val myMap = mutableMapOf<Int,MarkerState>()
 
-    val mapStyleOptions =
-        if(isSystemInDarkTheme())
-            MapStyleOptions.loadRawResourceStyle(context,R.raw.style_json_dark)
-        else
-            MapStyleOptions.loadRawResourceStyle(context,R.raw.style_json_light)
-
-
-    //val fetchingRoute by viewModel.fetchingRoute.collectAsState()
-    //val currentBusShape by viewModel.currentBusShape.collectAsState()
-    val currentRoute by viewModel.currentRoute.collectAsState()
-    val user by viewModel.user.collectAsState()
-    val recordingRoute by viewModel.recordingRoute.collectAsState()
-    val coords by viewModel.coords.collectAsState()
-
-    val currentMarker by viewModel.currentMarker.collectAsState()
-
-    val cameraPositionState: CameraPositionState = rememberCameraPositionState {
-        position = CameraPosition(LatLng(18.5204, 73.8567), 12f, 0f,0f)
-    }
-
-
-    PermissionBox(permissions = listOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.POST_NOTIFICATIONS)) {
-
-    }
-
-    Scaffold(
-        topBar = {
-            //SearchViewCustom()
-        },
-
-        floatingActionButton = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                if (!recordingRoute) {
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            //set user to travelling
-
-                            val coarsePermission = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                            val fineLocation = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                            )
-                            val notificationPermission = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS
-                            )
-
-                            if (coarsePermission == PackageManager.PERMISSION_GRANTED &&
-                                fineLocation == PackageManager.PERMISSION_GRANTED &&
-                                notificationPermission == PackageManager.PERMISSION_GRANTED
-                            ) {
-                                //have permissions
-
-                                val intent = Intent(context, NavigationService::class.java)
-                                    .apply {
-                                        action = ACTION_START
-                                    }
-                                try {
-                                    context.startForegroundService(intent)
-                                    viewModel.startLocationUpdates()
-                                    viewModel.updateRecordingRoute(true)
-                                } catch (e: Exception) {
-                                    println("here")
-                                }
-
-                            } else {
-                                val toast = Toast.makeText(
-                                    context,
-                                    "One of the permissions required for this feature is not granted",
-                                    Toast.LENGTH_LONG
-                                )
-                                toast.show()
-                            }
-
-
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.directions_bus),
-                                "Start recording this route"
-                            )
-                        },
-                        text = { Text(text = "Start recording this route") },
-                    )
-                } else {
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            //set user to travelling
-
-                            val coarsePermission = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                            val fineLocation = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                            )
-                            val notificationPermission = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS
-                            )
-
-                            if (coarsePermission == PackageManager.PERMISSION_GRANTED &&
-                                fineLocation == PackageManager.PERMISSION_GRANTED &&
-                                notificationPermission == PackageManager.PERMISSION_GRANTED
-                            ) {
-                                //have permissions
-
-                                val intent = Intent(context, NavigationService::class.java)
-                                    .apply {
-                                        action = ACTION_STOP
-                                    }
-                                try {
-                                    context.startForegroundService(intent)
-                                    viewModel.stopRecordingRoute()
-                                    viewModel.updateRecordingRoute(false)
-                                } catch (e: Exception) {
-                                    println("here")
-                                }
-
-                            } else {
-                                val toast = Toast.makeText(
-                                    context,
-                                    "One of the permissions required for this feature is not granted",
-                                    Toast.LENGTH_LONG
-                                )
-                                toast.show()
-                            }
-
-
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.directions_bus),
-                                "Stop recording this route"
-                            )
-                        },
-                        text = { Text(text = "Stop recording this route") },
-                    )
-                }
-
-                /*FloatingActionButton(
-                    onClick = { viewModel.deleteCurrentMarker() }
-                ) {
-                    Text(text = "$currentMarker")
-                }*/
-
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        viewModel.optimizeRoute()
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.directions_bus),
-                            "Optimize route"
-                        )
-                    },
-                    text = { Text(text = "Optimize route") },
-                )
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        viewModel.clearCoords()
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.directions_bus),
-                            "Clear Coords"
-                        )
-                    },
-                    text = { Text(text = "Clear Coords") },
-                )
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        viewModel.clearCoords()
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.directions_bus),
-                            "Export KML File"
-                        )
-                    },
-                    text = { Text(text = "Export KML File") },
-                )
-
-            }
-
-
-
-        },
-        floatingActionButtonPosition = FabPosition.Start
-    ) { contentPadding  ->
-
-        println(contentPadding)
-        Box(modifier = Modifier.fillMaxSize()) {
-
-            /*AnimatedVisibility(visible = fetchingRoute) {
-                LoadingDialog(text = "Fetching route")
-            }*/
-
-            GoogleMap(
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(mapStyleOptions = mapStyleOptions),
-                uiSettings = MapUiSettings(
-                    compassEnabled = false,
-                    zoomControlsEnabled = false)
-            ) {
-                if(coords.isNotEmpty())
-                {
-                    Polyline(points = coords)
-                    for((index, coord) in coords.withIndex()) {
-                        Marker(
-                            state = MarkerState(position = coord),
-                            title = index.toString(),
-                            onClick = {
-                                viewModel.updateCurrentMarker(index)
-                                true
-                            }
-                        )
-                    }
-
-                }
-            }
-
+    GoogleMap(
+        modifier = Modifier.fillMaxSize(),
+        onMapClick = { coord ->
+            viewModel.addMarker(coord)
         }
-
-    }
-
-}
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun SearchViewCustom(
-    viewModel: HomeScreenViewModel
-) {
-    val context = LocalContext.current
-    var searchViewActive by remember { mutableStateOf(false) }
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val fetchingRoutes by viewModel.fetchingRoutes.collectAsState()
-    val routes by viewModel.routes.collectAsState()
-    val recordingRoute by viewModel.recordingRoute.collectAsState()
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        SearchBar(
-            colors = SearchBarDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shadowElevation = 6.dp,
-            leadingIcon = {
-                if (!searchViewActive)
-                    Icon(imageVector = Icons.Rounded.Search, contentDescription = "Search")
-                else
-                    IconButton(onClick = { searchViewActive = false }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-            },
-            trailingIcon = {
-                if (searchViewActive)
-                    IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                        Icon(imageVector = Icons.Rounded.Clear, contentDescription = "Clear Search")
-                    }
-            },
-            placeholder = { Text("Search by route no or route") },
-            query = searchQuery,
-            onQueryChange = {
-                viewModel.updateSearchQuery(it)
-            },
-            onSearch = {
-                //filter through list
-            },
-            active = searchViewActive,
-            onActiveChange = {
-                searchViewActive = !searchViewActive
-                if (searchViewActive && routes.isEmpty()) viewModel.fetchAllRoutes()
-            }
-        ) {
-            AnimatedVisibility(visible = fetchingRoutes) {
-                LoadingDialog(text = "Fetching routes")
-            }
-
-            LazyColumn {
-                items(routes.size) {
-                    BusItem(
-                        modifier = Modifier.clickable {
-                            if(!recordingRoute) {
-                                viewModel.updateCurrentRoute(routes[it])
-                                searchViewActive = false
-                            }
-                            else {
-                                val toastMessage = Toast.makeText(context,"Please stop recording the current route to select a new route", Toast.LENGTH_SHORT)
-                                toastMessage.show()
-                            }
-                        },
-                        routes[it].route_no,
-                        viewModel.capitalizeWord( routes[it].route)
-                    )
+    ){
+         Polyline(mapState.map{LatLng(it.lat,it.lng)})
+         for(latLngMarker in mapState) {
+            MarkerInfoWindow(
+                state = myMap.getOrPut(latLngMarker.id) { MarkerState(LatLng(0.0,0.0)) },
+                draggable = true,
+                onClick = {
+                  false
+                },
+                onInfoWindowClick ={
+                    viewModel.deleteMarker(it.tag as Int)
                 }
+            ) {
+                //println(it.position)
+                Text(
+                    text="Delete Marker"
+                )
             }
-
         }
     }
 }
-
-
