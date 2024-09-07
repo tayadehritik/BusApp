@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,9 +58,9 @@ class HomeScreenViewModel @Inject constructor(
 
         }
     }
-    fun addMarker(coord:LatLng) {
+    fun addMarker(id:Int,coord:LatLng){
         viewModelScope.launch(Dispatchers.IO) {
-            dao.insertMarker(LatLngMarker(id= 0,lat = coord.latitude,lng = coord.longitude))
+            dao.insertMarker(LatLngMarker(id= id,lat = coord.latitude,lng = coord.longitude))
         }
     }
 

@@ -56,6 +56,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import com.google.maps.android.compose.Marker
@@ -71,30 +72,42 @@ import com.tayadehritik.busapp.ui.common.ACTION_STOP
 import com.tayadehritik.busapp.ui.common.LoadingDialog
 import com.tayadehritik.busapp.ui.common.PermissionBox
 import com.tayadehritik.busapp.ui.list_items.BusItem
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun HomeScreen(viewModel: HomeScreenViewModel)
 {
+    val coroutineScope = rememberCoroutineScope()
     val mapState by viewModel.mapState.collectAsState()
     val myMap = mutableMapOf<Int,MarkerState>()
 
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
         onMapClick = { coord ->
-            viewModel.addMarker(coord)
+            val id = myMap.values.size
+            myMap[id] = MarkerState(coord)
+            viewModel.addMarker(id,coord)
+
+
         }
     ){
          Polyline(mapState.map{LatLng(it.lat,it.lng)})
-         for(latLngMarker in mapState) {
+         for((id,markerState) in myMap) {
+             LaunchedEffect(markerState.position) {
+                 println(markerState.position)
+                 viewModel.updateMarker(id, markerState.position)
+             }
             MarkerInfoWindow(
-                state = myMap.getOrPut(latLngMarker.id) { MarkerState(LatLng(0.0,0.0)) },
+                state = markerState,
                 draggable = true,
                 onClick = {
                   false
                 },
+                tag = id,
                 onInfoWindowClick ={
                     viewModel.deleteMarker(it.tag as Int)
+                    myMap.remove(it.tag)
                 }
             ) {
                 //println(it.position)

@@ -3,6 +3,7 @@ package com.tayadehritik.busapp.data.local
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +15,7 @@ interface RouteCollectionDAO {
     fun getCollectedRoute(): Flow<List<LatLngMarker>>
 
     @Insert
-    fun insertMarker(vararg latLngMarkers:LatLngMarker)
+    fun insertMarker(latLngMarkers:LatLngMarker)
 
     @Update
     fun updateMarker(marker:LatLngMarker)
