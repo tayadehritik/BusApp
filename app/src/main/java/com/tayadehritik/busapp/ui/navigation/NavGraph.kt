@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.core.os.bundleOf
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -21,6 +22,7 @@ import com.tayadehritik.busapp.ui.authentication.LoginOrSignUpViewModel
 import com.tayadehritik.busapp.ui.authentication.VerificationScreen
 import com.tayadehritik.busapp.ui.authentication.VerificationScreenViewModel
 import com.tayadehritik.busapp.ui.home.HomeScreen
+import com.tayadehritik.busapp.ui.home.HomeScreenViewModel
 
 
 @Composable
@@ -28,7 +30,13 @@ fun NavGraph(
     navController: NavHostController,
     startDestination:String
 ) {
+    val loginOrSignUpViewModel = hiltViewModel<LoginOrSignUpViewModel>()
+    val verificationScreenViewModel = hiltViewModel<VerificationScreenViewModel>()
+
+
     NavHost(navController = navController,startDestination) {
+
+
 
         composable("LogInOrSignUpScreen") {
 
@@ -39,7 +47,8 @@ fun NavGraph(
                 },
                 onNavigateToHomeScreen = {
                     navController.navigate("HomeScreen")
-                }
+                },
+                loginOrSignUpViewModel
             )
 
         }
@@ -76,12 +85,14 @@ fun NavGraph(
                 backStackEntry.arguments?.getString("verificationId"),
                 onNavigateToHomeScreen = {
                     navController.navigate("HomeScreen")
-                }
+                },
+                verificationScreenViewModel
             )
         }
 
         composable("HomeScreen") {
-            HomeScreen()
+            val homeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
+            HomeScreen(homeScreenViewModel)
         }
     }
 }

@@ -11,16 +11,20 @@ import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.auth
 import com.tayadehritik.busapp.data.LoginOrSignUpUIState
 import com.tayadehritik.busapp.data.remote.PhoneAuthentication
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
-class LoginOrSignUpViewModel(
+@HiltViewModel
+class LoginOrSignUpViewModel @Inject constructor(
+    private val phoneAuthentication: PhoneAuthentication
 ): ViewModel() {
 
     private val _loginOrSignUpUIState = MutableStateFlow(LoginOrSignUpUIState())
     val loginOrSignUpUIState:StateFlow<LoginOrSignUpUIState>  = _loginOrSignUpUIState.asStateFlow()
-    private val phoneAuthentication = PhoneAuthentication()
+
 
 
     fun inputPhoneNumber(phoneNumber:String) {

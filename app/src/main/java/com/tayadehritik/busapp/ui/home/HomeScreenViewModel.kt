@@ -1,108 +1,84 @@
 package com.tayadehritik.busapp.ui.home
 
 
-import androidx.compose.ui.text.toLowerCase
+import android.app.Application
+import android.util.Xml
+import androidx.compose.runtime.MutableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.MultiplePermissionsState
-import com.google.firebase.auth.FirebaseAuth
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.tayadehritik.busapp.data.Bus
+import com.google.maps.android.compose.MarkerState
+import com.tayadehritik.busapp.data.KMLHandler
+import com.tayadehritik.busapp.data.MapState
+import com.tayadehritik.busapp.data.OptimizedRoute
 import com.tayadehritik.busapp.data.Route
-import com.tayadehritik.busapp.data.Shape
 import com.tayadehritik.busapp.data.User
+import com.tayadehritik.busapp.data.local.AppDatabase
+import com.tayadehritik.busapp.data.local.LatLngMarker
 import com.tayadehritik.busapp.data.remote.BusNetwork
+import com.tayadehritik.busapp.data.remote.GoogleRoadsAPI
 import com.tayadehritik.busapp.data.remote.UserNetwork
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class HomeScreenViewModel: ViewModel() {
+@HiltViewModel
+class HomeScreenViewModel @Inject constructor(
+    private val googleRoadsAPI: GoogleRoadsAPI,
+    private val kmlHandler: KMLHandler,
+    private val appDatabase: AppDatabase,
+    private val appContext: Application
+) : ViewModel() {
 
-    private val _searchViewActive = MutableStateFlow(false)
-    val searchViewActive = _searchViewActive.asStateFlow()
-
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery = _searchQuery.asStateFlow()
-
-    private val _fetchingRoutes = MutableStateFlow(true)
-    val fetchingRoutes = _fetchingRoutes.asStateFlow()
-
-    private val _recordingRoute = MutableStateFlow(false)
-    val recordingRoute = _recordingRoute.asStateFlow()
-
-    private val _routes = MutableStateFlow(listOf<Route>())
-    val routes = _routes.asStateFlow()
-
-    private var _currentRoute = MutableStateFlow<Route?>(null)
-    val currentRoute = _currentRoute.asStateFlow()
-
-    private var _user = MutableStateFlow<User?>(null)
-    val user = _user.asStateFlow()
-
-
-    private val busNetwork:BusNetwork = BusNetwork(Firebase.auth.currentUser!!.uid)
-    private var allRoutes:List<Route> = listOf<Route>()
-
-
-
+    private val dao = appDatabase.routeCollectionDAO()
+    private val _mapState = MutableStateFlow<List<LatLngMarker>>(listOf())
+    val mapState = _mapState.asStateFlow()
 
     init {
+
         viewModelScope.launch {
-            _user.value  = UserNetwork.getUser()
-            if(_user.value != null){
-                if(_user.value!!.is_travelling){
+            clearmap()
+            dao.getCollectedRoute().collectLatest{
+                _mapState.value = it
+            }
 
-                }
-            }
-            else {
-                UserNetwork.addUser()
-            }
+        }
+    }
+    fun addMarker(id:Int,coord:LatLng){
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.insertMarker(LatLngMarker(id= id,lat = coord.latitude,lng = coord.longitude))
         }
     }
 
-    fun updateSearchViewActive(value:Boolean) {
-        _searchViewActive.value = value
-    }
-    fun updateSearchQuery(value:String) {
-        _searchQuery.value = value
-        _routes.value = allRoutes
-        val allWords = value.split(" ")
-        _routes.value = _routes.value.filter {route ->
-            allWords.any { word ->
-                route.route_no.lowercase().contains(word.lowercase()) or route.route.lowercase().contains(word.lowercase())
-            }
+    fun updateMarker(id:Int, coords:LatLng) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val latLngMarker = LatLngMarker(id, coords.latitude, coords.longitude)
+            dao.updateMarker(latLngMarker)
         }
     }
 
-    fun fetchAllRoutes() {
-        if(fetchingRoutes.value) {
-            viewModelScope.launch {
-                _routes.value = busNetwork.getAllRoutes()
-                allRoutes = _routes.value
-                _fetchingRoutes.value = false
-            }
+    fun deleteMarker(id:Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.deleteMarker(id)
         }
     }
-
-    fun updateRecordingRoute(value:Boolean) {
-        _recordingRoute.value = value
-    }
-
-    fun updateCurrentRoute(value: Route) {
-        updateSearchQuery("${value.route_no} ${capitalizeWord(value.route)}")
-        _currentRoute.value = value
-        /*viewModelScope.launch {
-            _currentBusShape.value = busNetwork.getBusShape(value)
-            _fetchingRoute.value = false
-        }*/
-    }
-
-    fun capitalizeWord(input:String):String {
-        return input.split(" ").joinToString(" ") {
-            it.lowercase().replaceFirstChar { it.uppercase() }
+    fun clearmap() {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.clearRoute()
         }
     }
 

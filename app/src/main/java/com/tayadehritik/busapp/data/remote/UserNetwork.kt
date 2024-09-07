@@ -137,4 +137,19 @@ object UserNetwork {
 
     }
 
+    suspend fun getMapsAPIKey():String? {
+        val response = client.get("https://www.punebusapp.live/user/maps_api_Key") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization,"Bearer "+ Base64.getEncoder().encodeToString(userId.toByteArray()))
+            }
+        }
+        if(response.status == HttpStatusCode.NoContent || response.status == HttpStatusCode.Unauthorized) {
+            return null
+        }
+        else {
+            return response.body()
+        }
+    }
+
 }

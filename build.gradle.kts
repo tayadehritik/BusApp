@@ -4,9 +4,8 @@ buildscript {
 
         classpath("com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1")
 
-
-
     }
+
 }
 
 
@@ -16,5 +15,7 @@ plugins {
     id("com.google.gms.google-services") version "4.4.0" apply false
 
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
+    id("com.google.dagger.hilt.android") version "2.48" apply false
 
 }
+
