@@ -67,42 +67,36 @@ import com.google.maps.android.compose.rememberMarkerState
 import com.tayadehritik.busapp.R
 import com.tayadehritik.busapp.data.local.LatLngMarker
 import com.tayadehritik.busapp.service.NavigationService
-import com.tayadehritik.busapp.ui.common.ACTION_START
-import com.tayadehritik.busapp.ui.common.ACTION_STOP
-import com.tayadehritik.busapp.ui.common.LoadingDialog
-import com.tayadehritik.busapp.ui.common.PermissionBox
-import com.tayadehritik.busapp.ui.list_items.BusItem
 import kotlinx.coroutines.launch
 
 
 @Composable
 fun HomeScreen(viewModel: HomeScreenViewModel)
 {
-    val coroutineScope = rememberCoroutineScope()
     val mapState by viewModel.mapState.collectAsState()
     val myMap = mutableMapOf<Int,MarkerState>()
 
-    GoogleMap(
+    MapEditor()
+
+    /*GoogleMap(
         modifier = Modifier.fillMaxSize(),
         onMapClick = { coord ->
             val id = myMap.values.size
             myMap[id] = MarkerState(coord)
             viewModel.addMarker(id,coord)
-
-
         }
     ){
-         Polyline(mapState.map{LatLng(it.lat,it.lng)})
-         for((id,markerState) in myMap) {
-             LaunchedEffect(markerState.position) {
-                 println(markerState.position)
-                 viewModel.updateMarker(id, markerState.position)
-             }
+        Polyline(mapState.map{LatLng(it.lat,it.lng)})
+        for((id,markerState) in myMap) {
+            LaunchedEffect(markerState.position) {
+                println(markerState.position)
+                viewModel.updateMarker(id, markerState.position)
+            }
             MarkerInfoWindow(
                 state = markerState,
                 draggable = true,
                 onClick = {
-                  false
+                    false
                 },
                 tag = id,
                 onInfoWindowClick ={
@@ -110,11 +104,11 @@ fun HomeScreen(viewModel: HomeScreenViewModel)
                     myMap.remove(it.tag)
                 }
             ) {
-                //println(it.position)
+            //println(it.position)
                 Text(
                     text="Delete Marker"
                 )
             }
         }
-    }
+    }*/
 }
