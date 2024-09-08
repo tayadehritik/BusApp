@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -38,14 +37,16 @@ fun MapEditor() {
         floatingActionButton = {
             AnimatedVisibility(visible = editingMarker) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ExtendedFloatingActionButton(onClick = { /*TODO*/ }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Add")
-                        Text(text = "Edit")
-                    }
-                    ExtendedFloatingActionButton(onClick = { /*TODO*/ }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Add")
-                        Text(text = "Delete")
-                    }
+                    ExtendedFloatingActionButton(
+                        icon = { Icon(Icons.Default.Edit, contentDescription = "Add")},
+                        text = { Text(text = "Edit") },
+                        onClick = { /*TODO*/ }
+                    )
+                    ExtendedFloatingActionButton(
+                        icon = { Icon(Icons.Default.Delete, contentDescription = "Add") },
+                        text = { Text(text = "Delete") },
+                        onClick = { /*TODO*/ }
+                    )
                 }
             }
         }
