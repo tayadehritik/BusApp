@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,36 +26,47 @@ class HomeScreenViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val dao = appDatabase.routeCollectionDAO()
-    private val _mapState = MutableStateFlow<List<LatLng>>(listOf())
+    private val _mapState = MutableStateFlow<List<LatLngMarker>>(listOf())
     val mapState = _mapState.asStateFlow()
 
     init {
-
         viewModelScope.launch {
             clearmap()
             dao.getCollectedRoute().collectLatest{
-                _mapState.value = it.map { LatLng(it.lat,it.lng) }
-            }
+                _mapState.value = it
 
+            }
         }
+
     }
     fun addMarker(coord:LatLng){
         viewModelScope.launch(Dispatchers.IO) {
-            dao.insertMarker(LatLngMarker(id= 0,lat = coord.latitude,lng = coord.longitude))
+            dao.insertMarker(LatLngMarker(tag=_mapState.value.size, lat = coord.latitude, lng = coord.longitude))
         }
     }
 
-    fun updateMarker(id:Int, coords:LatLng) {
+    fun updateMarker(tag:Int, coords:LatLng) {
         viewModelScope.launch(Dispatchers.IO) {
-            val latLngMarker = LatLngMarker(id, coords.latitude, coords.longitude)
-            dao.updateMarker(latLngMarker)
+            dao.updateMarker(tag, coords.latitude, coords.longitude)
         }
     }
 
-    fun deleteMarker(coord:LatLng) {
+    fun updateIndices() {
         viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteMarker(coord.latitude,coord.longitude)
+            val updatedMarkers = dao.getCollectedRouteOnce().mapIndexed {index, latLngMarker ->
+                latLngMarker.tag = index
+                latLngMarker
+            }
+            dao.updateAllMarkers(updatedMarkers)
         }
+    }
+    fun deleteMarker(tag:Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.deleteMarker(tag)
+            updateIndices()
+        }
+
+
     }
     fun clearmap() {
         viewModelScope.launch(Dispatchers.IO) {

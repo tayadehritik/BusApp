@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,17 +33,21 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerInfoWindow
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.Polyline
+import com.google.maps.android.compose.rememberMarkerState
+import com.tayadehritik.busapp.data.local.LatLngMarker
 
-
+val markerState:Map<LatLngMarker, MarkerState> = mutableMapOf()
 @Preview
 @Composable
 fun MapEditor(
-    markerCoords:List<LatLng> = listOf(),
+    markerCoords:List<LatLngMarker> = listOf(),
     addMarker: (LatLng) -> Unit = {},
-    deleteMarker: (LatLng) -> Unit = {}
+    deleteMarker: (Int) -> Unit = {},
+    updateMarker: (Int, LatLng) -> Unit = {tag, coords -> }
 ) {
     var showMarkerOptions by remember { mutableStateOf(false) }
-    var selectedMarker by remember { mutableStateOf<LatLng>( LatLng(0.0,0.0)) }
+    var selectedMarker by remember { mutableStateOf<Int>(-1) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
@@ -56,7 +61,9 @@ fun MapEditor(
                     ExtendedFloatingActionButton(
                         icon = { Icon(Icons.Default.Delete, contentDescription = "Add") },
                         text = { Text(text = "Delete") },
-                        onClick = { deleteMarker(selectedMarker) }
+                        onClick = {
+                            deleteMarker(selectedMarker)
+                        }
                     )
                 }
             }
@@ -67,20 +74,26 @@ fun MapEditor(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             uiSettings = MapUiSettings(zoomControlsEnabled = false),
-            onMapClick = { addMarker(it) }
+            onMapClick = {
+                addMarker(it)
+                markerState[]
+            }
         ){
-            Polyline(points = markerCoords)
-            markerCoords.forEach {coord ->
+            Polyline(points = markerCoords.map { LatLng(it.lat, it.lng) })
+            (markerState.zip(markerCoords)).forEach { zipped ->
+
                 MarkerInfoWindow(
-                    state = MarkerState(coord),
+                    state = zipped.first,
+                    draggable = true,
+                    tag = zipped.second.tag,
                     onClick = {
                         showMarkerOptions = true
-                        selectedMarker = coord
+                        selectedMarker = it.tag as Int
                         false
                     },
                     onInfoWindowClose = { showMarkerOptions = false }
                 ) {
-                    Text(text = "MarkerInfoWindow")
+                    Text(text = (it.tag as Int).toString())
                 }
             }
         }

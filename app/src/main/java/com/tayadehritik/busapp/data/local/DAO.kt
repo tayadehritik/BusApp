@@ -14,13 +14,18 @@ interface RouteCollectionDAO {
     @Query("Select * FROM CollectedRoute")
     fun getCollectedRoute(): Flow<List<LatLngMarker>>
 
+    @Query("Select * FROM CollectedRoute")
+    fun getCollectedRouteOnce(): List<LatLngMarker>
+
     @Insert
     fun insertMarker(latLngMarkers:LatLngMarker)
 
+    @Query("UPDATE CollectedRoute SET lat=:lat, lng=:lng WHERE tag=:tag")
+    fun updateMarker(tag:Int, lat:Double, lng:Double)
     @Update
-    fun updateMarker(marker:LatLngMarker)
-    @Query("DELETE FROM CollectedRoute WHERE lat=:lat AND lng=:lng")
-    fun deleteMarker(lat:Double, lng:Double)
+    fun updateAllMarkers(markers:List<LatLngMarker>)
+    @Query("DELETE FROM CollectedRoute WHERE tag=:tag")
+    fun deleteMarker(tag:Int)
 
     @Query("DELETE FROM CollectedRoute")
     fun clearRoute(): Int

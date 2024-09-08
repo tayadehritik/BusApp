@@ -81,6 +81,9 @@ fun HomeScreen(viewModel: HomeScreenViewModel)
         },
         deleteMarker = {
             viewModel.deleteMarker(it)
+        },
+        updateMarker = { tag, coords ->
+            viewModel.updateMarker(tag, coords)
         }
     )
 }
