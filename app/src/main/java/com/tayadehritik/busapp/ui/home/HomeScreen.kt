@@ -73,42 +73,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(viewModel: HomeScreenViewModel)
 {
-    val mapState by viewModel.mapState.collectAsState()
-    val myMap = mutableMapOf<Int,MarkerState>()
-
-    MapEditor()
-
-    /*GoogleMap(
-        modifier = Modifier.fillMaxSize(),
-        onMapClick = { coord ->
-            val id = myMap.values.size
-            myMap[id] = MarkerState(coord)
-            viewModel.addMarker(id,coord)
+    val markerCoords by viewModel.mapState.collectAsState()
+    MapEditor(
+        markerCoords = markerCoords,
+        addMarker = {
+            viewModel.addMarker(it)
+        },
+        deleteMarker = {
+            viewModel.deleteMarker(it)
         }
-    ){
-        Polyline(mapState.map{LatLng(it.lat,it.lng)})
-        for((id,markerState) in myMap) {
-            LaunchedEffect(markerState.position) {
-                println(markerState.position)
-                viewModel.updateMarker(id, markerState.position)
-            }
-            MarkerInfoWindow(
-                state = markerState,
-                draggable = true,
-                onClick = {
-                    false
-                },
-                tag = id,
-                onInfoWindowClick ={
-                    viewModel.deleteMarker(it.tag as Int)
-                    myMap.remove(it.tag)
-                }
-            ) {
-            //println(it.position)
-                Text(
-                    text="Delete Marker"
-                )
-            }
-        }
-    }*/
+    )
 }

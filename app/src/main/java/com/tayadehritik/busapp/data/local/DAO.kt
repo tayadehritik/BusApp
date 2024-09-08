@@ -19,8 +19,8 @@ interface RouteCollectionDAO {
 
     @Update
     fun updateMarker(marker:LatLngMarker)
-    @Query("DELETE FROM CollectedRoute WHERE id=:id")
-    fun deleteMarker(id:Int)
+    @Query("DELETE FROM CollectedRoute WHERE lat=:lat AND lng=:lng")
+    fun deleteMarker(lat:Double, lng:Double)
 
     @Query("DELETE FROM CollectedRoute")
     fun clearRoute(): Int

@@ -24,7 +24,7 @@ class HomeScreenViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val dao = appDatabase.routeCollectionDAO()
-    private val _mapState = MutableStateFlow<List<LatLngMarker>>(listOf())
+    private val _mapState = MutableStateFlow<List<LatLng>>(listOf())
     val mapState = _mapState.asStateFlow()
 
     init {
@@ -32,14 +32,14 @@ class HomeScreenViewModel @Inject constructor(
         viewModelScope.launch {
             clearmap()
             dao.getCollectedRoute().collectLatest{
-                _mapState.value = it
+                _mapState.value = it.map { LatLng(it.lat,it.lng) }
             }
 
         }
     }
-    fun addMarker(id:Int,coord:LatLng){
+    fun addMarker(coord:LatLng){
         viewModelScope.launch(Dispatchers.IO) {
-            dao.insertMarker(LatLngMarker(id= id,lat = coord.latitude,lng = coord.longitude))
+            dao.insertMarker(LatLngMarker(id= 0,lat = coord.latitude,lng = coord.longitude))
         }
     }
 
@@ -50,9 +50,9 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun deleteMarker(id:Int) {
+    fun deleteMarker(coord:LatLng) {
         viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteMarker(id)
+            dao.deleteMarker(coord.latitude,coord.longitude)
         }
     }
     fun clearmap() {
